@@ -47,7 +47,7 @@ export default function AddSale() {
   const remaining = total - Number(formData.amountPaid || 0);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    let newFormData = { ...formData, [e.target.name]: e.target.value };
+    const newFormData = { ...formData, [e.target.name]: e.target.value };
     
     let currentQty = quantityNum;
     let currentPrice = sellPriceNum;
@@ -114,8 +114,8 @@ export default function AddSale() {
 
       router.push('/payments');
       router.refresh();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }

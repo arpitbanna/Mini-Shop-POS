@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { InventoryItem } from '@/lib/types';
 import Link from 'next/link';
 import { PlusCircle, Search } from 'lucide-react';
@@ -28,26 +28,35 @@ export default function Inventory() {
     fetchInventory();
   }, []);
 
-  const filteredInventory = inventory.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
-    if (!matchesSearch) return false;
-    
-    if (availabilityFilter === 'IN_STOCK') return item.available >= 5;
-    if (availabilityFilter === 'LOW') return item.available > 0 && item.available < 5;
-    if (availabilityFilter === 'OUT_OF_STOCK') return item.available === 0;
-    return true;
-  }).sort((a, b) => {
-    if (sortFilter === 'date') {
-      return new Date(b.dateAdded!).getTime() - new Date(a.dateAdded!).getTime();
-    } else if (sortFilter === 'profit') {
-      const profitA = (a.sellPrice || 0) - a.buyPrice;
-      const profitB = (b.sellPrice || 0) - b.buyPrice;
-      return profitB - profitA;
-    } else if (sortFilter === 'stock') {
-      return b.available - a.available;
-    }
-    return 0;
-  });
+  const inventoryWithAvailable = useMemo(() => {
+    return inventory.map((item) => ({
+      ...item,
+      available: item.quantityIn - item.quantityOut
+    }));
+  }, [inventory]);
+
+  const filteredInventory = useMemo(() => {
+    return inventoryWithAvailable.filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
+      if (!matchesSearch) return false;
+      
+      if (availabilityFilter === 'IN_STOCK') return item.available > 0;
+      if (availabilityFilter === 'LOW') return item.available > 0 && item.available < 5;
+      if (availabilityFilter === 'OUT_OF_STOCK') return item.available === 0;
+      return true;
+    }).sort((a, b) => {
+      if (sortFilter === 'date') {
+        return new Date(b.dateAdded!).getTime() - new Date(a.dateAdded!).getTime();
+      } else if (sortFilter === 'profit') {
+        const profitA = (a.sellPrice || 0) - a.buyPrice;
+        const profitB = (b.sellPrice || 0) - b.buyPrice;
+        return profitB - profitA;
+      } else if (sortFilter === 'stock') {
+        return b.available - a.available;
+      }
+      return 0;
+    });
+  }, [inventoryWithAvailable, search, availabilityFilter, sortFilter]);
 
   return (
     <div>
@@ -77,7 +86,7 @@ export default function Inventory() {
               style={{ width: 'auto', marginBottom: 0 }}
             >
               <option value="ALL">All Items</option>
-              <option value="IN_STOCK">In Stock (5+)</option>
+              <option value="IN_STOCK">In Stock (&gt; 0)</option>
               <option value="LOW">Low Stock (&lt; 5)</option>
               <option value="OUT_OF_STOCK">Out of Stock</option>
             </select>
@@ -139,15 +148,15 @@ export default function Inventory() {
               </thead>
               <tbody>
                 {filteredInventory.map((item) => (
-                  <tr key={item.id}>
+                  <tr key={item.id} style={{ transition: 'all 0.3s ease-in-out' }}>
                     <td><div className="text-secondary" style={{fontSize: 13, minWidth: '120px'}}>{formatDateTime(item.dateAdded!)}</div></td>
-                    <td style={{ fontWeight: 600 }}>{item.name}</td>
+                    <td style={{ fontWeight: 600, color: item.available === 0 ? 'var(--danger)' : item.available < 5 ? 'var(--warning)' : 'var(--success)', transition: 'color 0.3s ease' }}>{item.name}</td>
                     <td>₹{item.buyPrice}</td>
                     <td>₹{item.sellPrice || 0}</td>
                     <td className="text-success font-bold">₹{(item.sellPrice || 0) - item.buyPrice}</td>
                     <td>{item.quantityIn}</td>
                     <td>{item.quantityOut}</td>
-                    <td style={{ fontWeight: 600, color: item.available < 5 && item.available > 0 ? 'var(--warning)' : item.available === 0 ? 'var(--danger)' : 'inherit' }}>
+                    <td style={{ fontWeight: 600, color: item.available === 0 ? 'var(--danger)' : item.available < 5 ? 'var(--warning)' : 'var(--success)', transition: 'color 0.3s ease' }}>
                       {item.available}
                     </td>
                     <td>

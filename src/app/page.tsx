@@ -1,18 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { InventoryItem, SaleItem } from '@/lib/types';
-import { Activity, IndianRupee, TrendingUp, Package } from 'lucide-react';
+import { InventoryItem, SaleItem, PurchaseItem, ExpenseItem } from '@/lib/types';
+import { Activity, IndianRupee, TrendingUp, Package, ShoppingCart, Receipt, Wallet } from 'lucide-react';
+import Link from 'next/link';
 import { formatDateTime } from '@/lib/utils';
 
 function DashboardSkeleton() {
   return (
     <div>
       <h1 className="mb-6">Dashboard Overview</h1>
-      <div className="grid grid-cols-5 mb-8 gap-4">
-        {[...Array(5)].map((_, i) => (
+      <div className="grid grid-cols-2 mb-8 gap-4">
+        {[...Array(4)].map((_, i) => (
           <div key={i} className="glass-panel stat-card animate-pulse" style={{ height: '90px' }}></div>
         ))}
+        <div className="glass-panel stat-card animate-pulse col-span-2" style={{ height: '90px' }}></div>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="glass-panel animate-pulse" style={{ height: '300px' }}></div>
@@ -25,21 +27,29 @@ function DashboardSkeleton() {
 export default function Dashboard() {
   const [sales, setSales] = useState<SaleItem[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [purchases, setPurchases] = useState<PurchaseItem[]>([]);
+  const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [salesRes, invRes] = await Promise.all([
+        const [salesRes, invRes, purRes, expRes] = await Promise.all([
           fetch('/api/sales'),
           fetch('/api/inventory'),
+          fetch('/api/purchases'),
+          fetch('/api/expenses'),
         ]);
         const salesData = await salesRes.json();
         const invData = await invRes.json();
+        const purData = await purRes.json();
+        const expData = await expRes.json();
         
         // Make sure data is array
         if (Array.isArray(salesData)) setSales(salesData);
         if (Array.isArray(invData)) setInventory(invData);
+        if (Array.isArray(purData)) setPurchases(purData);
+        if (Array.isArray(expData)) setExpenses(expData);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
@@ -56,20 +66,39 @@ export default function Dashboard() {
   // Calculate statistics
   const totalProfit = sales.reduce((acc, sale) => acc + sale.profit, 0);
   
-  // Timezone safe today check using purely local date strings
-  const today = new Date();
-  const todayLocalString = today.toLocaleDateString();
+  // Dynamically compute available inventory
+  const inventoryWithDynamicAvailable = inventory.map(item => ({
+    ...item,
+    available: item.quantityIn - item.quantityOut
+  }));
 
-  const salesToday = sales.filter((sale) => new Date(sale.date).toLocaleDateString() === todayLocalString);
+  // Add Total Sales metrics
+  const totalRevenue = sales.reduce((acc, sale) => acc + sale.total, 0);
+  const totalItemsSold = sales.reduce((acc, sale) => acc + sale.quantity, 0);
+
+  // Financial Metrics
+  const totalPurchase = purchases.reduce((acc, p) => acc + p.amount, 0);
+  const extraExpenses = expenses.reduce((acc, e) => acc + e.amount, 0);
+  const purseBalance = totalRevenue - totalPurchase - extraExpenses;
+
+  // Timezone safe today check using start and end of local today
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0).getTime();
+  const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999).getTime();
+
+  const salesToday = sales.filter((sale) => {
+    const saleDate = new Date(sale.date).getTime();
+    return saleDate >= startOfToday && saleDate <= endOfToday;
+  });
   const todaySalesCount = salesToday.reduce((acc, sale) => acc + sale.quantity, 0);
-  const todayRevenue = salesToday.reduce((acc, sale) => acc + sale.amountPaid, 0);
+  const todayRevenue = salesToday.reduce((acc, sale) => acc + sale.total, 0);
 
   // We keep lowStockItems for the data table rendering below, but removed the Top Card for it
   const pendingPaymentsAmount = sales.reduce((acc, sale) => acc + Math.max(0, sale.remaining), 0);
   
-  const lowStockItems = inventory.filter((item) => item.available < 5 && item.available > 0);
+  const lowStockItems = inventoryWithDynamicAvailable.filter((item) => item.available < 5 && item.available > 0);
   
-  const availableItems = inventory.filter((item) => item.available > 0);
+  const availableItems = inventoryWithDynamicAvailable.filter((item) => item.available > 0);
   const availableItemsCount = availableItems.length;
   // Get top 3 available items by quantity
   const top3Available = [...availableItems].sort((a,b) => b.available - a.available).slice(0, 3).map(i => i.name).join(', ');
@@ -97,9 +126,49 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1 className="mb-6">Dashboard Overview</h1>
+      <div className="flex-between mb-6">
+        <h1 className="mb-0">Dashboard Overview</h1>
+        <div className="flex gap-3">
+          <Link href="/add-purchase" className="btn btn-outline" style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' }}>
+            <ShoppingCart size={18} /> Add Purchase
+          </Link>
+          <Link href="/add-expense" className="btn btn-outline" style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' }}>
+            <Receipt size={18} /> Add Expense
+          </Link>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+        {/* Purse Balance Card - Full Width on Mobile, spans 3 on Desktop */}
+        <div className="glass-panel stat-card col-span-2 md:col-span-3 mb-4" style={{ borderRadius: '1.5rem', border: `1px solid ${purseBalance >= 0 ? 'var(--success)' : 'var(--danger)'}` }}>
+          <div className="flex-between">
+            <span className="stat-label">Purse Balance</span>
+            <Wallet size={24} style={{ color: purseBalance >= 0 ? 'var(--success)' : 'var(--danger)' }} />
+          </div>
+          <div className="stat-value" style={{ color: purseBalance >= 0 ? 'var(--success)' : 'var(--danger)', fontSize: '2.5rem' }}>
+            {purseBalance < 0 ? '-' : ''}₹{Math.abs(purseBalance)}
+          </div>
+          <div style={{fontSize: 13, color: 'var(--text-secondary)'}}>
+            Total Revenue (₹{totalRevenue}) - Purchases (₹{totalPurchase}) - Expenses (₹{extraExpenses})
+          </div>
+        </div>
+
+        <div className="glass-panel stat-card" style={{ borderRadius: '1.5rem' }}>
+          <div className="flex-between">
+            <span className="stat-label">Total Purchase</span>
+            <ShoppingCart size={20} className="text-secondary" />
+          </div>
+          <div className="stat-value">₹{totalPurchase}</div>
+        </div>
+
+        <div className="glass-panel stat-card" style={{ borderRadius: '1.5rem' }}>
+          <div className="flex-between">
+            <span className="stat-label">Extra Expenses</span>
+            <Receipt size={20} className="text-warning" />
+          </div>
+          <div className="stat-value">₹{extraExpenses}</div>
+        </div>
+
         <div className="glass-panel stat-card" style={{ borderRadius: '1.5rem' }}>
           <div className="flex-between">
             <span className="stat-label">Total Profit</span>
@@ -108,6 +177,15 @@ export default function Dashboard() {
           <div className="stat-value text-success">₹{totalProfit}</div>
         </div>
         
+        <div className="glass-panel stat-card" style={{ borderRadius: '1.5rem' }}>
+          <div className="flex-between">
+            <span className="stat-label">Total Sales</span>
+            <IndianRupee size={20} className="text-primary" />
+          </div>
+          <div className="stat-value">₹{totalRevenue}</div>
+          <div style={{fontSize: 13, color: 'var(--text-secondary)'}}>{totalItemsSold} items sold</div>
+        </div>
+
         <div className="glass-panel stat-card" style={{ borderRadius: '1.5rem' }}>
           <div className="flex-between">
             <span className="stat-label">Today Sales</span>
@@ -125,7 +203,7 @@ export default function Dashboard() {
           <div className="stat-value text-warning">₹{pendingPaymentsAmount}</div>
         </div>
 
-        <div className="glass-panel stat-card" style={{ borderRadius: '1.5rem' }}>
+        <div className="glass-panel stat-card col-span-2" style={{ borderRadius: '1.5rem' }}>
           <div className="flex-between">
             <span className="stat-label">Available Items</span>
             <Package size={20} className="text-secondary" />

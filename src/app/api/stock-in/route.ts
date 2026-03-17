@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 import { notion, STOCK_IN_DB_ID } from '@/lib/notion';
 

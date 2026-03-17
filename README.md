@@ -1,52 +1,41 @@
-# Mini-Shop-POS
+# Mini Shop POS
 
-A premium, modern Point of Sale (POS) application tailored for hostel mini-shops. Built on Next.js 14 and powered entirely by Notion as a headless CMS/database.
+A modern, fast, and feature-rich Point of Sale (POS) application tailored for small retail or hostel mini-shops. Built on **Next.js 14**, utilizing **Notion** as a headless CMS and database, and featuring a beautiful dark-mode **glassmorphism** UI.
 
-## Features ✨
+![Mini Shop POS](https://img.shields.io/badge/Status-Production_Ready-success?style=for-the-badge) ![Next.js](https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white) ![Notion](https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white)
 
-- **Modern Glassmorphism UI**: A beautiful, glowing, highly-polished user interface optimized for speed and clarity.
-- **Real-Time Dashboard**: See your Total Profit, Today's Sales, Pending Payments, and Available Items instantly. Includes a sleek CSS-native 7-Day Profit Trend chart!
-- **Dynamic Inventory**: Live integration with Notion for Stock In / Stock Out counts. Sort and filter stock easily by custom availability metrics.
-- **POS Quick-Sales Flow**: Record "Paid", "Half-Paid", or "Udhaar" sales frictionlessly with auto-fill pricing logic.
+## Features
 
-## Environment Variables 🔐
+- **Store Dashboard** 📊 - Live metrics for Total Revenue, Profit, Pending Payments, Purse Balance, and Low Stock alerts.
+- **Inventory Management** 📦 - Intelligent stock tracking with dynamically calculated availability and conditional color-coded statuses (In Stock, Low Stock, out of Stock).
+- **Financial Tracking** 💸 - Dedicated modules to register and balance Daily Purchases and External Expenses.
+- **Udhaar / Payments System** 💳 - Keep track of partially paid and unpaid items automatically associated with specific room numbers or users.
+- **Optimized Performance** ⚡ - Engineered using `useMemo` hooks safely with single-fetch API handlers over Notion's database queries.
 
-To run this project locally or deploy it to Vercel, you will need the following environment variables. Add them to your `.env.local` file:
+## Setup Instructions
 
-```env
-NOTION_API_KEY=ntn_your_secret_integration_token_here
-NOTION_STOCK_IN_DB_ID=your_stock_in_notion_db_id
-NOTION_STOCK_OUT_DB_ID=your_stock_out_notion_db_id
+### 1. Requirements
+- Node.js > 18.x
+- A Notion Workspace with an active internal Integration Secret (API Key).
+
+### 2. Environment Setup
+Rename the included `.env.example` file to `.env.local`:
+```bash
+cp .env.example .env.local
+```
+Fill out the variables using the IDs corresponding to your respective Notion Databases.
+
+### 3. Running Locally
+```bash
+npm install
+npm run dev
 ```
 
-## Setup Instructions 🚀
+The application will start gracefully at `http://localhost:3000`.
 
-1. **Clone the Repository**
-   ```bash
-   git clone <your-repo-url>
-   cd "Mini 306"
-   ```
-
-2. **Install Dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Configure Notion**
-   - Create a Notion Integration at [notion.so/my-integrations](https://www.notion.so/my-integrations).
-   - Share your Stock In and Stock Out databases with the new integration.
-   - Enter your variables in `.env.local`.
-
-4. **Run the Development Server**
-   ```bash
-   npm run dev
-   ```
-   Open [http://localhost:3000](http://localhost:3000) to view your premium POS dashboard!
-
-## Vercel Deployment 🌍
-This application is fully compatible with Vercel serverless Edge functions out of the box. 
-
-**Important:** The build will require the environment variables to be set, otherwise it may fail during static generation or when hitting API routes.
-1. Link your GitHub repository to Vercel.
-2. In the Vercel project settings (Environment Variables section), securely paste the values for `NOTION_API_KEY`, `NOTION_STOCK_IN_DB_ID`, and `NOTION_STOCK_OUT_DB_ID`.
-3. Click **Deploy**. Vercel will automatically run `npm run build` and launch your production bundle globally!
+## Deployment to Vercel
+This project is configured and verified to drop seamlessly into **Vercel** via default configurations. 
+1. Push your repository to GitHub.
+2. Link the repository directly into a new Vercel Project.
+3. Add the `.env.local` keys to the **Environment Variables** deployment settings in Vercel. 
+4. Deploy. No additional build settings are required!

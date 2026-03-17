@@ -25,7 +25,7 @@ export default function AddStock() {
         const res = await fetch('/api/inventory');
         const data = await res.json();
         if (Array.isArray(data)) {
-          // get unique items by name to serve as suggestions
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const uniqueItems: any[] = [];
           const seen = new Set();
           for (const item of data) {
@@ -44,7 +44,7 @@ export default function AddStock() {
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let newFormData = { ...formData, [e.target.name]: e.target.value };
+    const newFormData = { ...formData, [e.target.name]: e.target.value };
     
     // Auto-fill prices if name matches an existing inventory item
     if (e.target.name === 'name') {
@@ -83,8 +83,8 @@ export default function AddStock() {
 
       router.push('/inventory');
       router.refresh();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }

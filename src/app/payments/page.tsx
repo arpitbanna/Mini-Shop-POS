@@ -101,7 +101,7 @@ export default function Payments() {
           <div className="flex gap-4 items-center">
             <select 
               value={dateFilter} 
-              onChange={(e) => setDateFilter(e.target.value as any)}
+              onChange={(e) => setDateFilter(e.target.value as 'all' | 'today' | 'week' | 'month')}
               style={{ padding: '8px 12px', fontSize: '14px', marginBottom: 0, width: 'auto' }}
             >
               <option value="all">All Time</option>

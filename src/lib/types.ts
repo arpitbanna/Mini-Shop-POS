@@ -23,3 +23,17 @@ export interface SaleItem {
   amountPaid: number;
   remaining: number;
 }
+
+export interface PurchaseItem {
+  id: string;
+  name: string;
+  amount: number;
+  date: string;
+}
+
+export interface ExpenseItem {
+  id: string;
+  name: string;
+  amount: number;
+  date: string;
+}
