@@ -11,7 +11,7 @@ export async function GET() {
       database_id: PURCHASES_DB_ID,
       sorts: [
         {
-          property: 'Date',
+          property: 'date',
           direction: 'descending',
         },
       ],
@@ -21,7 +21,7 @@ export async function GET() {
       id: page.id,
       name: page.properties.Name.title[0]?.plain_text || 'Unknown',
       amount: page.properties.Amount.number || 0,
-      date: page.properties.Date.date?.start || new Date().toISOString(),
+      date: page.properties.date.date?.start || new Date().toISOString(),
     }));
 
     return NextResponse.json(purchases);
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
         Amount: {
           number: Number(amount),
         },
-        Date: {
+        date: {
           date: { start: date },
         },
       },
