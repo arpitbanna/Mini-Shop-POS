@@ -1,34 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mini-Shop-POS
 
-## Getting Started
+A premium, modern Point of Sale (POS) application tailored for hostel mini-shops. Built on Next.js 14 and powered entirely by Notion as a headless CMS/database.
 
-First, run the development server:
+## Features ✨
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Modern Glassmorphism UI**: A beautiful, glowing, highly-polished user interface optimized for speed and clarity.
+- **Real-Time Dashboard**: See your Total Profit, Today's Sales, Pending Payments, and Available Items instantly. Includes a sleek CSS-native 7-Day Profit Trend chart!
+- **Dynamic Inventory**: Live integration with Notion for Stock In / Stock Out counts. Sort and filter stock easily by custom availability metrics.
+- **POS Quick-Sales Flow**: Record "Paid", "Half-Paid", or "Udhaar" sales frictionlessly with auto-fill pricing logic.
+
+## Environment Variables 🔐
+
+To run this project locally or deploy it to Vercel, you will need the following environment variables. Add them to your `.env.local` file:
+
+```env
+NOTION_API_KEY=ntn_your_secret_integration_token_here
+NOTION_STOCK_IN_DB_ID=your_stock_in_notion_db_id
+NOTION_STOCK_OUT_DB_ID=your_stock_out_notion_db_id
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup Instructions 🚀
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Clone the Repository**
+   ```bash
+   git clone <your-repo-url>
+   cd "Mini 306"
+   ```
 
-## Learn More
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+3. **Configure Notion**
+   - Create a Notion Integration at [notion.so/my-integrations](https://www.notion.so/my-integrations).
+   - Share your Stock In and Stock Out databases with the new integration.
+   - Enter your variables in `.env.local`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4. **Run the Development Server**
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) to view your premium POS dashboard!
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Vercel Deployment 🌍
+This application is fully compatible with Vercel serverless Edge functions out of the box. 
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Important:** The build will require the environment variables to be set, otherwise it may fail during static generation or when hitting API routes.
+1. Link your GitHub repository to Vercel.
+2. In the Vercel project settings (Environment Variables section), securely paste the values for `NOTION_API_KEY`, `NOTION_STOCK_IN_DB_ID`, and `NOTION_STOCK_OUT_DB_ID`.
+3. Click **Deploy**. Vercel will automatically run `npm run build` and launch your production bundle globally!
