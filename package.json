@@ -10,10 +10,14 @@
   },
   "dependencies": {
     "@notionhq/client": "^2.3.0",
+    "@tanstack/react-query": "^5.91.0",
     "lucide-react": "^0.577.0",
     "next": "16.1.7",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "recharts": "^3.8.0",
+    "sonner": "^2.0.7",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

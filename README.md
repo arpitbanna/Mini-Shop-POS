@@ -1,41 +1,95 @@
 # Mini Shop POS
 
-A modern, fast, and feature-rich Point of Sale (POS) application tailored for small retail or hostel mini-shops. Built on **Next.js 14**, utilizing **Notion** as a headless CMS and database, and featuring a beautiful dark-mode **glassmorphism** UI.
-
-![Mini Shop POS](https://img.shields.io/badge/Status-Production_Ready-success?style=for-the-badge) ![Next.js](https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white) ![Notion](https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white)
+Mini Shop POS is a production-ready Point of Sale web app for small shops/hostel stores, built with Next.js App Router, TypeScript, Tailwind CSS 4, Notion API, and React Query.
 
 ## Features
 
-- **Store Dashboard** 📊 - Live metrics for Total Revenue, Profit, Pending Payments, Purse Balance, and Low Stock alerts.
-- **Inventory Management** 📦 - Intelligent stock tracking with dynamically calculated availability and conditional color-coded statuses (In Stock, Low Stock, out of Stock).
-- **Financial Tracking** 💸 - Dedicated modules to register and balance Daily Purchases and External Expenses.
-- **Udhaar / Payments System** 💳 - Keep track of partially paid and unpaid items automatically associated with specific room numbers or users.
-- **Optimized Performance** ⚡ - Engineered using `useMemo` hooks safely with single-fetch API handlers over Notion's database queries.
+- Dashboard with Revenue, Profit, Expenses, Purchases, Udhaar, and low-stock insights
+- Sales entry with payment split tracking (Paid / Partial / Unpaid)
+- Inventory management with stock in/out and edit/delete support
+- Purchase and expense tracking
+- Payments settlement workflow
+- Guest mode support for safe demo usage
 
-## Setup Instructions
+## Tech Stack
 
-### 1. Requirements
-- Node.js > 18.x
-- A Notion Workspace with an active internal Integration Secret (API Key).
+- Next.js 16 (App Router)
+- TypeScript
+- Tailwind CSS 4
+- React Query (@tanstack/react-query)
+- Notion SDK (@notionhq/client)
+- Zustand
+- Sonner (toasts)
+- Lucide React (icons)
 
-### 2. Environment Setup
-Rename the included `.env.example` file to `.env.local`:
+## Project Structure
+
+```text
+src/
+	app/
+	components/
+	hooks/
+	lib/
+	config/
+	types/
+```
+
+## Environment Variables
+
+Create `.env.local` from `.env.example`:
+
 ```bash
 cp .env.example .env.local
 ```
-Fill out the variables using the IDs corresponding to your respective Notion Databases.
 
-### 3. Running Locally
+Required variables:
+
+- `NOTION_API_KEY`
+- `NOTION_STOCK_IN_DB_ID`
+- `NOTION_STOCK_OUT_DB_ID`
+- `NOTION_PURCHASES_DB_ID`
+- `NOTION_EXPENSES_DB_ID`
+- `ADMIN_PASSWORD`
+
+Notes:
+
+- `.env*` files are ignored by git.
+- `.env.example` is committed as a template.
+- Sensitive env values are used only on the server (`src/lib/notion.ts` is `server-only`).
+
+## Local Development
+
 ```bash
 npm install
 npm run dev
 ```
 
-The application will start gracefully at `http://localhost:3000`.
+Open http://localhost:3000
 
-## Deployment to Vercel
-This project is configured and verified to drop seamlessly into **Vercel** via default configurations. 
-1. Push your repository to GitHub.
-2. Link the repository directly into a new Vercel Project.
-3. Add the `.env.local` keys to the **Environment Variables** deployment settings in Vercel. 
-4. Deploy. No additional build settings are required!
+## Quality Checks
+
+```bash
+npm run lint
+npm run build
+```
+
+Both commands should pass before deployment.
+
+## Deployment (Vercel)
+
+1. Push the repository to GitHub.
+2. Import the repo in Vercel.
+3. Set all environment variables in Vercel Project Settings.
+4. Deploy.
+
+Recommended:
+
+- Keep `Production` and `Preview` env values synchronized.
+- Redeploy after any env variable update.
+
+## NPM Scripts
+
+- `npm run dev` - local development
+- `npm run lint` - lint checks
+- `npm run build` - production build
+- `npm run start` - run production server locally

@@ -2,117 +2,99 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Receipt } from 'lucide-react';
+import { Save, Loader2, ArrowLeft } from 'lucide-react';
+import { getLocalDatetimeStr } from '@/lib/utils';
+import { useAddExpense } from '@/hooks/useApi';
 
 export default function AddExpense() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  
+  const addExpense = useAddExpense();
   const [formData, setFormData] = useState({
     name: '',
     amount: '',
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalDatetimeStr(),
   });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      const res = await fetch('/api/expenses', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to add expense');
-      }
-
-      router.push('/');
-      router.refresh();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
+    addExpense.mutate({
+        name: formData.name,
+        amount: Number(formData.amount),
+        date: new Date(formData.date).toISOString()
+    }, {
+        onSuccess: () => router.push('/')
+    });
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <Receipt size={28} className="text-secondary" />
-        <h1 className="mb-0">Add New Expense</h1>
+    <div className="max-w-xl mx-auto pb-12">
+      <div className="flex items-center gap-4 mb-6">
+        <button onClick={() => router.back()} className="p-2 hover:bg-white/10 rounded-full transition-colors text-muted hover:text-white">
+          <ArrowLeft size={24} />
+        </button>
+        <h1 className="mb-0 text-3xl font-bold tracking-tight">Add Expense</h1>
       </div>
+      
+      <div className="glass-panel p-8 relative overflow-hidden group">
+        <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-danger/10 rounded-full blur-3xl pointer-events-none group-hover:bg-danger/20 transition-colors"></div>
 
-      <div className="glass-panel">
-        {error && (
-          <div className="mb-6 p-4 rounded-lg bg-[var(--danger)]/10 border border-[var(--danger)] text-[var(--danger)]">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="form-group">
-              <label htmlFor="name">Expense Name</label>
-              <input
-                type="text"
-                id="name"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g. Rent, Electricity"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="amount">Amount (₹)</label>
-              <input
-                type="number"
-                id="amount"
-                required
-                min="0"
-                step="0.01"
-                value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                placeholder="0.00"
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="date">Date</label>
-              <input
-                type="date"
-                id="date"
-                required
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="relative z-10">
+          <div className="mb-6">
+            <label htmlFor="name" className="text-sm text-muted mb-2 block">Expense Description</label>
+            <input 
+              id="name"
+              name="name" 
+              type="text" 
+              required 
+              placeholder="e.g. Cleaning Supplies"
+              value={formData.name}
+              onChange={handleChange}
+              className="input-glass"
+              autoComplete="off"
+            />
           </div>
 
-          <div className="flex justify-end gap-4 mt-4 pt-4" style={{ borderTop: '1px solid var(--glass-border)' }}>
-            <button
-              type="button"
-              className="btn flex-1 md:flex-none"
-              style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' }}
-              onClick={() => router.back()}
-              disabled={loading}
+          <div className="mb-6">
+            <label htmlFor="amount" className="text-sm text-muted mb-2 block">Amount (₹)</label>
+            <input 
+              id="amount"
+              name="amount" 
+              type="number" 
+              min="0" 
+              step="0.01" 
+              required 
+              placeholder="0.00"
+              value={formData.amount}
+              onChange={handleChange}
+              className="input-glass"
+            />
+          </div>
+
+          <div className="mb-8">
+            <label htmlFor="date" className="text-sm text-muted mb-2 block">Date & Time</label>
+            <input 
+              id="date"
+              name="date" 
+              type="datetime-local" 
+              required 
+              value={formData.date}
+              onChange={handleChange}
+              className="input-glass"
+            />
+          </div>
+
+          <div className="flex justify-end pt-4 border-t border-white/10 mt-6">
+            <button 
+              type="submit" 
+              className="btn bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 py-3 px-8 text-sm hover:scale-105 hover:shadow-lg text-white" 
+              disabled={addExpense.isPending}
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn flex-1 md:flex-none"
-              disabled={loading}
-              style={{ background: 'var(--primary)', color: 'white' }}
-            >
-              {loading ? 'Adding...' : 'Add Expense'}
+              {addExpense.isPending ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+              <span>{addExpense.isPending ? 'Saving...' : 'Save Expense'}</span>
             </button>
           </div>
         </form>

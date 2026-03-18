@@ -1,10 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 import { notion, STOCK_IN_DB_ID } from '@/lib/notion';
+import { getErrorMessage } from '@/lib/notion-helpers';
+import type { AddStockPayload } from '@/types';
 
 export async function POST(request: Request) {
   try {
-    const { name, buyPrice, sellPrice, quantity, date } = await request.json();
+    const { name, buyPrice, sellPrice, quantity, date } = (await request.json()) as AddStockPayload;
 
     const response = await notion.pages.create({
       parent: { database_id: STOCK_IN_DB_ID },
@@ -32,8 +33,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true, id: response.id });
-  } catch (error: any) {
-    console.error('Stock In creation error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: getErrorMessage(error, 'Unable to create stock entry') }, { status: 500 });
   }
 }

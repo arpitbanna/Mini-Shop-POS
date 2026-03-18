@@ -1,13 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Save, Loader2 } from 'lucide-react';
+import { useInventory, useAddInventory } from '@/hooks/useApi';
+import { Save, Loader2, ArrowLeft } from 'lucide-react';
 import { getLocalDatetimeStr } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export default function AddStock() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const { data: inventory = [] } = useInventory();
+  const addInventory = useAddInventory();
+
   const [formData, setFormData] = useState({
     name: '',
     buyPrice: '',
@@ -15,40 +19,21 @@ export default function AddStock() {
     quantity: '',
     date: getLocalDatetimeStr(),
   });
-  const [error, setError] = useState('');
-  const [inventoryList, setInventoryList] = useState<{name: string, buyPrice: number, sellPrice: number}[]>([]);
 
+  const fieldClass = 'w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all';
 
-  useEffect(() => {
-    async function fetchInventory() {
-      try {
-        const res = await fetch('/api/inventory');
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const uniqueItems: any[] = [];
-          const seen = new Set();
-          for (const item of data) {
-            if (!seen.has(item.name)) {
-              seen.add(item.name);
-              uniqueItems.push({ name: item.name, buyPrice: item.buyPrice, sellPrice: item.sellPrice || 0 });
-            }
-          }
-          setInventoryList(uniqueItems);
-        }
-      } catch (err) {
-        console.error('Failed to fetch inventory:', err);
-      }
-    }
-    fetchInventory();
-  }, []);
+  const uniqueItems = Array.from(new Set(inventory.map(item => item.name)))
+    .map(name => {
+      const item = inventory.find(i => i.name === name);
+      return { name, buyPrice: item?.buyPrice || 0, sellPrice: item?.sellPrice || 0 };
+    });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newFormData = { ...formData, [e.target.name]: e.target.value };
     
     // Auto-fill prices if name matches an existing inventory item
     if (e.target.name === 'name') {
-      const matchedItem = inventoryList.find(i => i.name.toLowerCase() === e.target.value.toLowerCase());
+      const matchedItem = uniqueItems.find(i => i.name.toLowerCase() === e.target.value.toLowerCase());
       if (matchedItem) {
         newFormData.buyPrice = matchedItem.buyPrice.toString();
         newFormData.sellPrice = matchedItem.sellPrice.toString();
@@ -60,50 +45,36 @@ export default function AddStock() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
 
-    try {
-      const payload = {
+    addInventory.mutate(
+      {
         ...formData,
         date: new Date(formData.date).toISOString()
-      };
-
-      const res = await fetch('/api/stock-in', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to add stock');
+      },
+      {
+        onSuccess: () => {
+          toast.success('Stock added successfully');
+          router.push('/inventory');
+        }
       }
-
-      router.push('/inventory');
-      router.refresh();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
+    );
   };
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-      <h1 className="mb-6">Add New Stock</h1>
+    <div className="max-w-2xl mx-auto pb-12">
+      <div className="flex items-center gap-4 mb-6">
+        <button onClick={() => router.back()} className="p-2 hover:bg-white/10 rounded-full transition-colors text-muted hover:text-white">
+          <ArrowLeft size={24} />
+        </button>
+        <h1 className="mb-0 text-xl font-semibold tracking-tight">Add New Stock</h1>
+      </div>
       
-      <div className="glass-panel">
-        {error && (
-          <div className="badge badge-danger mb-6" style={{ width: '100%', padding: '12px', fontSize: '14px' }}>
-            {error}
-          </div>
-        )}
+      <div className="glass-panel p-8 relative overflow-hidden group transition-all duration-200">
+        <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none group-hover:bg-primary/20 transition-colors"></div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="name">Item Name</label>
+        <form onSubmit={handleSubmit} className="relative z-10 space-y-6">
+          <div>
+            <label htmlFor="name" className="text-sm text-gray-400 mb-2 block">Item Name</label>
             <input 
               id="name"
               name="name" 
@@ -113,17 +84,19 @@ export default function AddStock() {
               placeholder="e.g. Maggi Normal"
               value={formData.name}
               onChange={handleChange}
+              className={fieldClass}
+              autoComplete="off"
             />
             <datalist id="inventory-suggestions">
-              {inventoryList.map((item, idx) => (
+              {uniqueItems.map((item, idx) => (
                 <option key={idx} value={item.name} />
               ))}
             </datalist>
           </div>
 
-          <div className="grid grid-cols-3 mb-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label htmlFor="buyPrice">Buy Price (₹)</label>
+              <label htmlFor="buyPrice" className="text-sm text-gray-400 mb-2 block">Buy Price (₹)</label>
               <input 
                 id="buyPrice"
                 name="buyPrice" 
@@ -134,10 +107,11 @@ export default function AddStock() {
                 placeholder="0.00"
                 value={formData.buyPrice}
                 onChange={handleChange}
+                className={fieldClass}
               />
             </div>
             <div>
-              <label htmlFor="sellPrice">Sell Price (₹)</label>
+              <label htmlFor="sellPrice" className="text-sm text-gray-400 mb-2 block">Sell Price (₹)</label>
               <input 
                 id="sellPrice"
                 name="sellPrice" 
@@ -148,10 +122,11 @@ export default function AddStock() {
                 placeholder="0.00"
                 value={formData.sellPrice}
                 onChange={handleChange}
+                className={fieldClass}
               />
             </div>
             <div>
-              <label htmlFor="quantity">Quantity</label>
+              <label htmlFor="quantity" className="text-sm text-gray-400 mb-2 block">Quantity (Units)</label>
               <input 
                 id="quantity"
                 name="quantity" 
@@ -161,12 +136,13 @@ export default function AddStock() {
                 placeholder="1"
                 value={formData.quantity}
                 onChange={handleChange}
+                className={fieldClass}
               />
             </div>
           </div>
 
-          <div className="mb-6">
-            <label htmlFor="date">Date & Time</label>
+          <div>
+            <label htmlFor="date" className="text-sm text-gray-400 mb-2 block">Date & Time</label>
             <input 
               id="date"
               name="date" 
@@ -174,25 +150,18 @@ export default function AddStock() {
               required 
               value={formData.date}
               onChange={handleChange}
+              className={fieldClass}
             />
           </div>
 
-          <div className="flex-between mt-8">
-            <button 
-              type="button" 
-              className="btn btn-outline" 
-              onClick={() => router.back()}
-              disabled={loading}
-            >
-              Cancel
-            </button>
+          <div className="flex justify-end pt-4 border-t border-white/10">
             <button 
               type="submit" 
-              className="btn btn-success" 
-              disabled={loading}
+              className="btn bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 py-3.5 px-8 text-sm rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-lg" 
+              disabled={addInventory.isPending}
             >
-              {loading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-              <span>Save Stock</span>
+              {addInventory.isPending ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+              <span>{addInventory.isPending ? 'Saving...' : 'Save Stock'}</span>
             </button>
           </div>
         </form>

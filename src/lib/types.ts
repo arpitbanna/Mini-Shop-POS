@@ -1,39 +1,13 @@
-export interface InventoryItem {
-  id: string; // Notion page ID
-  name: string;
-  buyPrice: number;
-  sellPrice: number;
-  quantityIn: number;
-  quantityOut: number;
-  available: number;
-  dateAdded: string;
-}
-
-export interface SaleItem {
-  id: string;
-  itemId: string; // Relation to Stock In
-  itemName: string;
-  date: string;
-  sellPrice: number;
-  buyPrice: number;
-  quantity: number;
-  total: number;
-  profit: number;
-  roomNo: number;
-  amountPaid: number;
-  remaining: number;
-}
-
-export interface PurchaseItem {
-  id: string;
-  name: string;
-  amount: number;
-  date: string;
-}
-
-export interface ExpenseItem {
-  id: string;
-  name: string;
-  amount: number;
-  date: string;
-}
+export type {
+  InventoryItem,
+  SaleItem,
+  PurchaseItem,
+  ExpenseItem,
+  AddSalePayload,
+  UpdatePaymentPayload,
+  AddStockPayload,
+  AddNamedAmountPayload,
+  InventoryUpdatePayload,
+  ApiSuccessResponse,
+  ApiErrorResponse,
+} from '@/types';
