@@ -34,7 +34,7 @@ export default function AddStock() {
   const [items, setItems] = useState<StockDraftItem[]>([]);
 
   const fieldClass =
-    'w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all';
+    'w-full rounded-xl border border-white/15 bg-white/[0.045] px-4 py-3 text-base text-white transition-all duration-200 focus:border-teal-400/70 focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-teal-500/40';
 
   const uniqueItems = Array.from(new Set(inventory.map((item) => item.name))).map((name) => {
     const existing = inventory.find((item) => item.name === name);
@@ -123,148 +123,150 @@ export default function AddStock() {
   };
 
   return (
-    <div className="w-full flex justify-center pb-12 px-4">
-      <div className="w-full max-w-4xl">
-        <div className="relative flex items-center justify-center mb-8">
+    <div className="flex w-full justify-center px-4 pb-14 pt-2">
+      <div className="w-full max-w-[980px]">
+        <div className="relative mb-10 flex items-center justify-center">
           <button
             onClick={() => router.back()}
-            className="absolute left-0 p-2 hover:bg-white/10 rounded-full transition-colors text-muted hover:text-white"
+            className="absolute left-0 rounded-full p-2 text-muted transition-colors hover:bg-white/10 hover:text-white"
           >
             <ArrowLeft size={24} />
           </button>
-          <h1 className="mb-0 text-2xl font-semibold tracking-tight text-center">Add New Stock</h1>
+          <h1 className="mb-0 text-center text-4xl font-bold tracking-tight text-white md:text-5xl">Add New Stock</h1>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="glass-panel p-6 space-y-6 rounded-2xl">
-            <div>
-              <label htmlFor="date" className="text-sm text-gray-400 mb-2 block">Date & Time</label>
-              <input
-                id="date"
-                name="date"
-                type="datetime-local"
-                required
-                value={entryMeta.date}
-                onChange={(e) => setEntryMeta({ date: e.target.value })}
-                className={fieldClass}
-              />
-              <p className="text-xs text-muted mt-2">Business Date: {getBusinessDate(5, new Date(entryMeta.date))}</p>
-            </div>
-
-            <div className="border border-white/10 rounded-xl p-4 bg-white/5 space-y-4">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="glass-panel rounded-2xl border border-white/20 bg-gradient-to-b from-white/[0.08] via-white/[0.04] to-white/[0.02] p-6 shadow-[0_14px_34px_-20px_rgba(0,0,0,0.85)] transition-all duration-200 hover:-translate-y-0.5">
+            <div className="space-y-5">
               <div>
-                <label htmlFor="name" className="text-sm text-gray-400 mb-2 block">Item Name</label>
+                <label htmlFor="date" className="mb-2.5 block text-base font-semibold tracking-wide text-slate-300">Date & Time</label>
                 <input
-                  id="name"
-                  name="name"
-                  type="text"
+                  id="date"
+                  name="date"
+                  type="datetime-local"
                   required
-                  list="inventory-suggestions"
-                  placeholder="e.g. Maggi"
-                  value={draft.name}
-                  onChange={handleDraftChange}
+                  value={entryMeta.date}
+                  onChange={(e) => setEntryMeta({ date: e.target.value })}
                   className={fieldClass}
                 />
-                <datalist id="inventory-suggestions">
-                  {uniqueItems.map((item, idx) => (
-                    <option key={idx} value={item.name} />
-                  ))}
-                </datalist>
+                <p className="mt-2 text-sm text-slate-400">Business Date: {getBusinessDate(5, new Date(entryMeta.date))}</p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-4">
                 <div>
-                  <label htmlFor="buyPrice" className="text-sm text-gray-400 mb-2 block">Buy (₹)</label>
+                  <label htmlFor="name" className="mb-2.5 block text-base font-semibold tracking-wide text-slate-300">Item Name</label>
                   <input
-                    id="buyPrice"
-                    name="buyPrice"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={draft.buyPrice}
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    list="inventory-suggestions"
+                    placeholder="e.g. Maggi"
+                    value={draft.name}
                     onChange={handleDraftChange}
                     className={fieldClass}
-                    placeholder="0"
                   />
+                  <datalist id="inventory-suggestions">
+                    {uniqueItems.map((item, idx) => (
+                      <option key={idx} value={item.name} />
+                    ))}
+                  </datalist>
                 </div>
-                <div>
-                  <label htmlFor="sellPrice" className="text-sm text-gray-400 mb-2 block">Sell (₹)</label>
-                  <input
-                    id="sellPrice"
-                    name="sellPrice"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={draft.sellPrice}
-                    onChange={handleDraftChange}
-                    className={fieldClass}
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="quantity" className="text-sm text-gray-400 mb-2 block">Qty</label>
-                  <input
-                    id="quantity"
-                    name="quantity"
-                    type="number"
-                    min="1"
-                    value={draft.quantity}
-                    onChange={handleDraftChange}
-                    className={fieldClass}
-                    placeholder="1"
-                  />
-                </div>
-              </div>
 
-              <button
-                type="button"
-                onClick={addItem}
-                className="btn btn-outline w-full border-white/20 hover:bg-white/10"
-              >
-                <Plus size={16} /> Add Item
-              </button>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div>
+                    <label htmlFor="buyPrice" className="mb-2.5 block text-sm font-semibold tracking-wide text-slate-300">Buy Price (₹)</label>
+                    <input
+                      id="buyPrice"
+                      name="buyPrice"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={draft.buyPrice}
+                      onChange={handleDraftChange}
+                      className={fieldClass}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="sellPrice" className="mb-2.5 block text-sm font-semibold tracking-wide text-slate-300">Sell Price (₹)</label>
+                    <input
+                      id="sellPrice"
+                      name="sellPrice"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={draft.sellPrice}
+                      onChange={handleDraftChange}
+                      className={fieldClass}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="quantity" className="mb-2.5 block text-sm font-semibold tracking-wide text-slate-300">Qty</label>
+                    <input
+                      id="quantity"
+                      name="quantity"
+                      type="number"
+                      min="1"
+                      value={draft.quantity}
+                      onChange={handleDraftChange}
+                      className={fieldClass}
+                      placeholder="1"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-lime-400 px-5 py-3 text-lg font-semibold text-white shadow-[0_12px_26px_-14px_rgba(74,222,128,0.9)] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-105"
+                >
+                  <Plus size={20} /> Add Item
+                </button>
+              </div>
             </div>
           </div>
 
-          <form onSubmit={submitStock} className="glass-panel p-6 rounded-2xl flex flex-col">
-            <h2 className="mb-4 text-lg font-semibold">Stock Entry Summary</h2>
+          <form onSubmit={submitStock} className="glass-panel flex flex-col rounded-2xl border border-white/20 bg-gradient-to-b from-white/[0.08] via-white/[0.04] to-white/[0.02] p-6 shadow-[0_14px_34px_-20px_rgba(0,0,0,0.85)] transition-all duration-200 hover:-translate-y-0.5">
+            <h2 className="mb-4 text-3xl font-semibold tracking-tight text-white md:text-4xl">Stock Entry Summary</h2>
 
             <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
               {items.length === 0 ? (
-                <div className="text-sm text-muted border border-dashed border-white/10 rounded-xl p-4 text-center">
-                  No stock items added yet.
+                <div className="rounded-xl border border-dashed border-white/20 bg-white/[0.02] px-4 py-3 text-center text-lg text-slate-300/80 md:text-xl">
+                  No stock items added yet
                 </div>
               ) : (
                 items.map((item, idx) => (
-                  <div key={`${item.name}-${idx}`} className="p-3 rounded-xl bg-white/5 border border-white/10 flex-between gap-3">
+                  <div key={`${item.name}-${idx}`} className="flex-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                     <div>
-                      <div className="font-medium text-white">{item.name}</div>
-                      <div className="text-xs text-muted">Qty {item.quantity}, Buy ₹{item.buyPrice}, Sell ₹{item.sellPrice}</div>
+                      <div className="text-lg font-medium text-white">{item.name}</div>
+                      <div className="text-sm text-muted">Qty {item.quantity}, Buy ₹{item.buyPrice}, Sell ₹{item.sellPrice}</div>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeItem(idx)}
-                      className="text-xs text-danger hover:text-red-300 inline-flex items-center gap-1"
+                      className="inline-flex items-center gap-1 text-sm text-danger hover:text-red-300"
                     >
-                      <Trash2 size={12} /> Remove
+                      <Trash2 size={16} /> Remove
                     </button>
                   </div>
                 ))
               )}
             </div>
 
-            <div className="mt-4 pt-4 border-t border-white/10 text-sm space-y-2">
-              <div className="flex-between"><span className="text-muted">Total Items</span><span>{items.length}</span></div>
-              <div className="flex-between"><span className="text-muted">Total Quantity</span><span>{summary.totalQty}</span></div>
-              <div className="flex-between"><span className="text-muted">Estimated Sell Value</span><span>₹{summary.estimatedValue}</span></div>
+            <div className="mt-5 space-y-2 border-t border-white/10 pt-4 text-base">
+              <div className="flex-between"><span className="text-muted">Total Items</span><span className="font-semibold text-white">{items.length}</span></div>
+              <div className="flex-between"><span className="text-muted">Total Quantity</span><span className="font-semibold text-white">{summary.totalQty}</span></div>
+              <div className="flex-between"><span className="text-muted">Estimated Sell Value</span><span className="font-semibold text-white">₹{summary.estimatedValue}</span></div>
             </div>
 
             <button
               type="submit"
-              className="btn mt-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 py-3.5"
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-lime-400 px-5 py-3 text-lg font-semibold text-white shadow-[0_12px_26px_-14px_rgba(74,222,128,0.9)] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={addInventory.isPending || items.length === 0}
             >
-              {addInventory.isPending ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+              {addInventory.isPending ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
               <span>{addInventory.isPending ? 'Saving...' : 'Save Stock Entry'}</span>
             </button>
           </form>

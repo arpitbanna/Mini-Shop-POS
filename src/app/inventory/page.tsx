@@ -97,19 +97,19 @@ export default function Inventory() {
       <div className="glass-panel p-6 transition-all duration-200">
         <div className="mb-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_220px_200px_auto] gap-4 items-stretch xl:items-center">
           <div className="relative min-w-0 md:col-span-2 xl:col-span-1">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted"><Search size={20} /></span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><Search size={20} /></span>
             <input 
               type="text" 
               placeholder="Search items..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="input-glass pl-12 pr-4 w-full min-w-0 mb-0 bg-white/5 backdrop-blur-xl border border-white/10 h-12 rounded-xl text-base shadow-sm transition-all duration-200"
+              className="pl-12 pr-4 w-full min-w-0 mb-0 rounded-xl border border-white/15 bg-white/[0.045] h-12 text-base transition-all duration-200 focus:border-teal-400/60 focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
             />
           </div>
           <select 
             value={availabilityFilter} 
             onChange={(e) => setAvailabilityFilter(e.target.value)}
-            className="input-glass w-full min-w-0 mb-0 bg-white/5 backdrop-blur-xl border border-white/10 h-12 rounded-xl px-4 text-sm cursor-pointer shadow-sm transition-all duration-200"
+            className="w-full min-w-0 mb-0 rounded-xl border border-white/15 bg-white/[0.045] h-12 px-4 text-sm cursor-pointer transition-all duration-200 focus:border-teal-400/60 focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
           >
             <option value="ALL">All Items</option>
             <option value="IN_STOCK">In Stock (&gt; 0)</option>
@@ -119,7 +119,7 @@ export default function Inventory() {
           <select 
             value={sortFilter} 
             onChange={(e) => setSortFilter(e.target.value)}
-            className="input-glass w-full min-w-0 mb-0 bg-white/5 backdrop-blur-xl border border-white/10 h-12 rounded-xl px-4 text-sm cursor-pointer shadow-sm transition-all duration-200"
+            className="w-full min-w-0 mb-0 rounded-xl border border-white/15 bg-white/[0.045] h-12 px-4 text-sm cursor-pointer transition-all duration-200 focus:border-teal-400/60 focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
           >
             <option value="date">Sort by Date</option>
             <option value="profit">Sort by Profit</option>

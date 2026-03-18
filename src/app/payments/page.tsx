@@ -78,8 +78,8 @@ export default function Payments() {
       <h1 className="mb-8 text-xl font-semibold tracking-tight">Payments & Udhaar</h1>
 
       <div className="glass-panel p-6 transition-all duration-200">
-        <div className="flex flex-col md:flex-row justify-between mb-8 gap-6">
-          <div className="flex flex-wrap gap-3">
+        <div className="mb-8 flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+          <div className="inline-flex flex-wrap items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.03] p-2">
             {[
               { id: 'all', label: 'All Sales', color: 'primary' },
               { id: 'paid', label: 'Paid', color: 'success' },
@@ -88,7 +88,7 @@ export default function Payments() {
             ].map(f => (
                <button 
                 key={f.id}
-                className={`px-4 py-2 h-11 rounded-full text-sm font-semibold transition-all duration-200 shadow-sm ${filter === f.id ? 'bg-blue-500 text-white shadow-blue-500/30' : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10'}`}
+                className={`min-h-11 rounded-xl px-4 py-2 text-sm font-semibold tracking-wide transition-all duration-200 ${filter === f.id ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-[0_10px_22px_-16px_rgba(45,212,191,0.9)]' : 'border border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:bg-white/10 hover:text-white'}`}
                 onClick={() => setFilter(f.id as FilterType)}
               >
                 {f.label}
@@ -96,11 +96,11 @@ export default function Payments() {
             ))}
           </div>
 
-          <div className="flex gap-4 items-center">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
             <select 
               value={dateFilter} 
               onChange={(e) => setDateFilter(e.target.value as 'all' | 'today' | 'week' | 'month')}
-              className="input-glass mb-0 text-sm px-4 h-11 rounded-full w-auto bg-white/5 backdrop-blur-xl border border-white/10 shadow-sm transition-all duration-200"
+              className="min-h-11 rounded-xl border border-white/15 bg-white/[0.045] px-4 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:border-white/25 focus:border-teal-400/60 focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
             >
               <option value="all">All Time</option>
               <option value="today">Today</option>
@@ -108,8 +108,9 @@ export default function Payments() {
               <option value="month">This Month</option>
             </select>
             
-            <div className="text-gray-400 text-sm bg-white/5 px-4 py-2 rounded-xl border border-white/10 flex items-center gap-2 h-11">
-              Outstanding: <span className="text-red-400 font-bold text-lg leading-none">{formatCurrency(generateReport())}</span>
+            <div className="flex min-h-11 items-center gap-2 rounded-xl border border-rose-400/25 bg-rose-500/10 px-4 py-2 text-sm text-rose-100 shadow-lg shadow-rose-500/10">
+              <span className="font-semibold text-slate-200">Outstanding:</span>
+              <span className="text-lg font-bold leading-none text-rose-300">{formatCurrency(generateReport())}</span>
             </div>
           </div>
         </div>
@@ -221,19 +222,19 @@ export default function Payments() {
 
             <form onSubmit={handlePaymentSubmit} className="space-y-6">
               <div className="mb-6">
-                <label className="text-sm text-muted mb-3 block font-medium">New Total Amount Paid (₹)</label>
+                <label className="text-sm font-semibold text-slate-300 mb-3 block tracking-wide">New Total Amount Paid (₹)</label>
                 <div className="relative">
-                  <DollarSign size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
+                  <DollarSign size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input 
                     type="number" 
                     step="0.01" min={0}
                     value={newAmountPaid} 
                     onChange={(e) => setNewAmountPaid(Number(e.target.value))} 
-                    className="input-glass pl-12 font-bold text-lg w-full py-3"
+                    className="pl-12 w-full rounded-xl border border-white/15 bg-white/[0.045] py-3 text-lg font-bold text-white transition-all duration-200 focus:border-teal-400/60 focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
                     required
                   />
                 </div>
-                <button type="button" onClick={() => setNewAmountPaid(paymentModalData.totalAmount)} className="w-full bg-success/10 text-success py-2 mt-3 rounded-lg border border-success/30 text-sm font-bold hover:bg-success/20 transition-colors">
+                <button type="button" onClick={() => setNewAmountPaid(paymentModalData.totalAmount)} className="w-full bg-success/15 text-success py-2.5 mt-3 rounded-xl border border-success/40 text-sm font-semibold hover:bg-success/25 transition-all duration-200">
                   Full Settle ({formatCurrency(paymentModalData.totalAmount)})
                 </button>
               </div>

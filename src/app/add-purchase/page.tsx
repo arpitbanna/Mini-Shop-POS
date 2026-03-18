@@ -44,7 +44,7 @@ export default function AddPurchase() {
 
         <form onSubmit={handleSubmit} className="relative z-10">
           <div className="mb-6">
-            <label htmlFor="name" className="text-sm text-muted mb-2 block">Purchase Description</label>
+            <label htmlFor="name" className="text-sm font-semibold text-slate-300 mb-2.5 block tracking-wide">Purchase Description</label>
             <input 
               id="name"
               name="name" 
@@ -53,13 +53,13 @@ export default function AddPurchase() {
               placeholder="e.g. Snack Resupply"
               value={formData.name}
               onChange={handleChange}
-              className="input-glass"
+              className="w-full rounded-xl border border-white/15 bg-white/[0.045] px-4 py-3 text-white transition-all focus:border-teal-400/60 focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
               autoComplete="off"
             />
           </div>
 
           <div className="mb-6">
-            <label htmlFor="amount" className="text-sm text-muted mb-2 block">Total Amount (₹)</label>
+            <label htmlFor="amount" className="text-sm font-semibold text-slate-300 mb-2.5 block tracking-wide">Total Amount (₹)</label>
             <input 
               id="amount"
               name="amount" 
@@ -70,12 +70,12 @@ export default function AddPurchase() {
               placeholder="0.00"
               value={formData.amount}
               onChange={handleChange}
-              className="input-glass"
+              className="w-full rounded-xl border border-white/15 bg-white/[0.045] px-4 py-3 text-white transition-all focus:border-teal-400/60 focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
             />
           </div>
 
           <div className="mb-8">
-            <label htmlFor="date" className="text-sm text-muted mb-2 block">Date & Time</label>
+            <label htmlFor="date" className="text-sm font-semibold text-slate-300 mb-2.5 block tracking-wide">Date & Time</label>
             <input 
               id="date"
               name="date" 
@@ -83,7 +83,7 @@ export default function AddPurchase() {
               required 
               value={formData.date}
               onChange={handleChange}
-              className="input-glass"
+              className="w-full rounded-xl border border-white/15 bg-white/[0.045] px-4 py-3 text-white transition-all focus:border-teal-400/60 focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
             />
           </div>
 

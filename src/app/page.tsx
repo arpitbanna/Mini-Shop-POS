@@ -210,19 +210,22 @@ export default function Dashboard() {
             <TrendingUp size={18} className="text-success" /> 7-Day Profit Trend
           </h2>
           {stats.hasChartData ? (
-            <div className="flex items-end gap-3 h-48 mt-auto pt-4 relative border-b border-white/10 pb-2">
+            <div className="mt-auto flex h-52 items-end gap-3 border-b border-white/10 pb-3 pt-5">
               {stats.profitByDay.map((day, idx) => (
-                <div key={idx} className="flex flex-col flex-1 items-center gap-3 group relative h-full justify-end">
-                  <div className="w-full rounded-t-xl bg-white/5 overflow-hidden flex flex-col justify-end" style={{ height: '100%' }}>
+                <div key={idx} className="group relative flex h-full flex-1 flex-col items-center justify-end gap-3">
+                  <div
+                    className="flex h-full w-full flex-col justify-end overflow-hidden rounded-t-xl border border-white/5 bg-gradient-to-b from-slate-700/40 to-slate-900/70"
+                    style={{ height: '100%' }}
+                  >
                     <div 
-                      className="w-full rounded-t-xl bg-gradient-to-t from-success/50 to-success transition-all duration-700 ease-out relative shadow-[0_-5px_15px_rgba(16,185,129,0.3)]" 
+                      className="relative w-full rounded-t-xl bg-gradient-to-t from-emerald-700/85 via-emerald-500/80 to-emerald-300/95 shadow-[0_-8px_22px_rgba(16,185,129,0.35)] transition-all duration-700 ease-out"
                       style={{ height: `${Math.max((day.profit / stats.maxProfit) * 100, 2)}%` }}
                     ></div>
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-black/80 backdrop-blur text-white px-3 py-1.5 rounded-lg text-xs transition-all z-10 text-center whitespace-nowrap shadow-xl -mt-8 font-medium border border-white/10">
+                    <div className="absolute left-1/2 top-0 z-10 -mt-8 -translate-x-1/2 whitespace-nowrap rounded-lg border border-white/10 bg-black/80 px-3 py-1.5 text-center text-xs font-medium text-white opacity-0 shadow-xl backdrop-blur transition-all group-hover:opacity-100">
                       ₹{day.profit}
                     </div>
                   </div>
-                  <span className="text-muted text-[10px] font-medium uppercase tracking-wider">{day.date}</span>
+                  <span className="text-muted text-[10px] font-semibold uppercase tracking-[0.14em]">{day.date}</span>
                 </div>
               ))}
             </div>
@@ -238,7 +241,7 @@ export default function Dashboard() {
 
         {/* Low Stock Items */}
         <div className="glass-panel flex flex-col">
-          <h2 className="text-xl font-semibold mb-4 flex gap-2 items-center">
+          <h2 className="mb-5 flex items-center gap-2 text-xl font-semibold">
             <AlertCircle size={18} className="text-warning"/> Low Stock Alerts
           </h2>
           {stats.lowStockItems.length === 0 ? (
@@ -249,17 +252,17 @@ export default function Dashboard() {
               <p className="text-sm text-muted">All items are sufficiently stocked!</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-3 overflow-y-auto pr-1" style={{ maxHeight: '250px' }}>
+            <div className="flex flex-col gap-3 overflow-y-auto pr-1" style={{ maxHeight: '260px' }}>
               {stats.lowStockItems.map((item) => (
-                <div key={item.id} className="flex-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-sm text-white">{item.name}</span>
-                    <span className="text-sm text-gray-400 mt-1">Available: <span className="text-yellow-400 font-bold ml-1">{item.available}</span></span>
+                <div key={item.id} className="flex-between rounded-2xl border border-white/10 bg-gradient-to-r from-white/10 via-white/5 to-transparent px-4 py-3.5 transition-colors hover:bg-white/10">
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <span className="truncate text-base font-semibold text-white">{item.name}</span>
+                    <span className="text-sm text-gray-300">Available: <span className="ml-1 font-bold text-yellow-300">{item.available}</span></span>
                   </div>
                   {item.available === 0 ? (
-                    <span className="badge badge-danger">Out of Stock</span>
+                    <span className="badge badge-danger px-3 py-1 text-xs">Out of Stock</span>
                   ) : (
-                    <span className="badge badge-warning text-black">Low</span>
+                    <span className="badge badge-warning px-3 py-1 text-xs text-black">Low</span>
                   )}
                 </div>
               ))}

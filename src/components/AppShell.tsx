@@ -9,6 +9,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const { isAdmin, isGuest, logout } = useAuthStore();
   const pathname = usePathname();
 
+  const navItems = [
+    { href: '/', label: 'Dashboard', icon: Home, exact: true },
+    { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+    { href: '/add-sale', label: 'Sale', icon: ShoppingCart },
+    { href: '/add-stock', label: 'Stock In', icon: PlusCircle },
+    { href: '/inventory', label: 'Inventory', icon: PackageSearch },
+    { href: '/payments', label: 'Payments', icon: DollarSign },
+  ];
+
   if (!isAdmin && !isGuest && pathname === '/login') {
     return <main className="container">{children}</main>;
   }
@@ -23,34 +32,38 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             Mini Shop POS
           </Link>
           <div className="nav-links">
-            <Link href="/" className="nav-item">
-              <Home size={18} /><span>Dashboard</span>
-            </Link>
-            <Link href="/analytics" className="nav-item">
-              <BarChart3 size={18} /><span>Analytics</span>
-            </Link>
-            <Link href="/add-sale" className="nav-item">
-              <ShoppingCart size={18} /><span>Sale</span>
-            </Link>
-            <Link href="/add-stock" className="nav-item">
-              <PlusCircle size={18} /><span>Stock In</span>
-            </Link>
-            <Link href="/inventory" className="nav-item">
-              <PackageSearch size={18} /><span>Inventory</span>
-            </Link>
-            <Link href="/payments" className="nav-item">
-              <DollarSign size={18} /><span>Payments</span>
-            </Link>
-            <button onClick={logout} className="nav-item text-danger hover:text-danger/80 transition-colors ml-4 cursor-pointer flex items-center gap-1 bg-transparent border-none">
-              <LogOut size={18} /><span>Logout</span>
+            {navItems.map((item) => {
+              const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`nav-item ${isActive ? 'active' : ''}`}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  <Icon size={16} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+            <button
+              onClick={logout}
+              className="nav-item text-danger hover:text-danger cursor-pointer bg-transparent border-none"
+            >
+              <LogOut size={16} />
+              <span>Logout</span>
             </button>
           </div>
         </div>
       </nav>
       {isGuest && (
-        <div className="bg-warning text-black text-center py-2 text-sm font-bold w-full relative z-40 flex items-center justify-center gap-2 shadow-lg">
-          <span className="animate-pulse flex h-2 w-2 rounded-full bg-black"></span>
-          Guest Mode (Demo Data) - Write actions are disabled
+        <div className="relative z-40 w-full border-y border-amber-300/45 bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-300 px-4 py-2.5 text-center text-sm font-extrabold tracking-wide text-slate-900 shadow-[0_10px_26px_-14px_rgba(251,191,36,0.95)]">
+          <div className="mx-auto flex max-w-6xl items-center justify-center gap-2.5">
+            <span className="flex h-2.5 w-2.5 animate-pulse rounded-full bg-slate-900"></span>
+            <span className="uppercase">Guest Mode (Demo Data) - Write actions are disabled</span>
+          </div>
         </div>
       )}
       <main className="container pt-6">

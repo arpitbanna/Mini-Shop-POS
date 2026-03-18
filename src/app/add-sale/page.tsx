@@ -34,7 +34,7 @@ export default function AddSale() {
   const [items, setItems] = useState<SaleDraftItem[]>([]);
 
   const fieldClass =
-    'w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all';
+    'w-full bg-white/[0.045] border border-white/15 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-400/60 focus:bg-white/[0.08] focus:ring-2 focus:ring-teal-500/30 transition-all duration-200';
 
   const availableInventory = inventory.filter((item) => item.available > 0);
 
@@ -173,7 +173,7 @@ export default function AddSale() {
         <div className="glass-panel space-y-6 border-white/10">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="roomNo" className="text-sm text-gray-400 mb-2 block">Room No/Name (Optional)</label>
+              <label htmlFor="roomNo" className="text-sm font-semibold text-slate-300 mb-2.5 block tracking-wide">Room No / Name</label>
               <input
                 id="roomNo"
                 name="roomNo"
@@ -185,7 +185,7 @@ export default function AddSale() {
               />
             </div>
             <div>
-              <label htmlFor="date" className="text-sm text-gray-400 mb-2 block">Date & Time</label>
+              <label htmlFor="date" className="text-sm font-semibold text-slate-300 mb-2.5 block tracking-wide">Date & Time</label>
               <input
                 id="date"
                 name="date"
@@ -198,9 +198,9 @@ export default function AddSale() {
             </div>
           </div>
 
-          <div className="p-4 rounded-xl border border-white/10 bg-white/5 space-y-4">
+          <div className="p-4 rounded-xl border border-white/10 bg-white/[0.03] space-y-4">
             <div>
-              <label htmlFor="productId" className="text-sm text-gray-400 mb-2 block">Select Item</label>
+              <label htmlFor="productId" className="text-sm font-semibold text-slate-300 mb-2.5 block tracking-wide">Select Item</label>
               <select
                 id="productId"
                 name="productId"
@@ -220,7 +220,7 @@ export default function AddSale() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="sellingPrice" className="text-sm text-gray-400 mb-2 block">Selling Price (₹)</label>
+                <label htmlFor="sellingPrice" className="text-sm font-semibold text-slate-300 mb-2.5 block tracking-wide">Selling Price (₹)</label>
                 <input
                   id="sellingPrice"
                   name="sellingPrice"
@@ -234,7 +234,7 @@ export default function AddSale() {
                 />
               </div>
               <div>
-                <label htmlFor="quantity" className="text-sm text-gray-400 mb-2 block">Quantity</label>
+                <label htmlFor="quantity" className="text-sm font-semibold text-slate-300 mb-2.5 block tracking-wide">Quantity</label>
                 <input
                   id="quantity"
                   name="quantity"
@@ -262,7 +262,7 @@ export default function AddSale() {
           </div>
 
           <div>
-            <label htmlFor="amountPaid" className="text-sm text-gray-400 mb-2 block">Amount Paid (₹)</label>
+            <label htmlFor="amountPaid" className="text-sm font-semibold text-slate-300 mb-2.5 block tracking-wide">Amount Paid (₹)</label>
             <input
               id="amountPaid"
               name="amountPaid"

@@ -30,6 +30,10 @@ function normalizeProductKey(name: string) {
   return name.trim().toLowerCase();
 }
 
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
@@ -138,6 +142,85 @@ export async function PUT(request: Request) {
     const body = (await request.json()) as InventoryUpdatePayload;
     const { id, name, buyPrice, sellPrice, quantityIn } = body;
     if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+
+    if (!isUuid(id)) {
+      const targetKey = normalizeProductKey(id);
+      const stockInRes = await notion.databases.query({
+        database_id: STOCK_IN_DB_ID,
+      });
+
+      let groupedMatch: { pageId: string; items: StockEntryItem[]; index: number } | null = null;
+      let legacyPageId = '';
+
+      for (const result of stockInRes.results) {
+        const page = asNotionResult(result);
+        if (!page) continue;
+
+        const groupedItems = getJsonTextProperty<StockEntryItem[]>(page.properties, 'Items', []);
+        if (groupedItems.length > 0) {
+          const index = groupedItems.findIndex((item) => normalizeProductKey(item.name) === targetKey);
+          if (index >= 0) {
+            groupedMatch = { pageId: page.id, items: groupedItems, index };
+            break;
+          }
+          continue;
+        }
+
+        const legacyName = normalizeProductKey(getTitleProperty(page.properties, 'Name', ''));
+        if (legacyName === targetKey) {
+          legacyPageId = page.id;
+          break;
+        }
+      }
+
+      if (groupedMatch) {
+        const updatedItems = [...groupedMatch.items];
+        const item = { ...updatedItems[groupedMatch.index] };
+        if (name !== undefined) item.name = name;
+        if (buyPrice !== undefined) item.buyPrice = Number(buyPrice);
+        if (sellPrice !== undefined) item.sellPrice = Number(sellPrice);
+        if (quantityIn !== undefined) item.quantity = Number(quantityIn);
+        updatedItems[groupedMatch.index] = item;
+
+        const updatedQuantity = updatedItems.reduce((sum, entry) => sum + Number(entry.quantity || 0), 0);
+
+        await notion.pages.update({
+          page_id: groupedMatch.pageId,
+          properties: {
+            Items: {
+              rich_text: [
+                {
+                  text: {
+                    content: JSON.stringify(updatedItems),
+                  },
+                },
+              ],
+            },
+            Quantity: {
+              number: updatedQuantity,
+            },
+          },
+        });
+
+        return NextResponse.json({ success: true });
+      }
+
+      if (!legacyPageId) {
+        return NextResponse.json(
+          { error: 'Item ID must be a valid UUID or an existing inventory item key' },
+          { status: 400 },
+        );
+      }
+
+      const properties: NonNullable<Parameters<typeof notion.pages.update>[0]['properties']> = {};
+      if (name !== undefined) properties.Name = { title: [{ text: { content: name } }] };
+      if (buyPrice !== undefined) properties['Buy Price'] = { number: Number(buyPrice) };
+      if (sellPrice !== undefined) properties['Sell Price'] = { number: Number(sellPrice) };
+      if (quantityIn !== undefined) properties.Quantity = { number: Number(quantityIn) };
+
+      await notion.pages.update({ page_id: legacyPageId, properties });
+      return NextResponse.json({ success: true });
+    }
 
     const properties: NonNullable<Parameters<typeof notion.pages.update>[0]['properties']> = {};
     if (name !== undefined) properties.Name = { title: [{ text: { content: name } }] };

@@ -89,28 +89,32 @@ export default function AnalyticsPage() {
   if (isLoading) return <AnalyticsSkeleton />;
 
   return (
-    <div className="pb-12">
-      <div className="flex-between mb-8 flex-wrap gap-4">
+    <div className="space-y-7 pb-12">
+      <div className="flex-between flex-wrap gap-4">
         <h1 className="mb-0 text-3xl font-bold tracking-tight">Analytics & Reports</h1>
-        <div className="glass-panel p-1 rounded-xl flex gap-1">
-          <button 
-            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${timeRange === '7D' ? 'bg-primary text-white shadow-md' : 'text-muted hover:text-white hover:bg-white/5'}`}
+        <div className="inline-flex items-center gap-1.5 rounded-2xl border border-white/15 bg-white/[0.03] p-1.5 backdrop-blur-xl">
+          <button
+            type="button"
+            className={`min-w-[116px] rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 ${timeRange === '7D' ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/20' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
             onClick={() => setTimeRange('7D')}
+            aria-pressed={timeRange === '7D'}
           >
             Last 7 Days
           </button>
-          <button 
-            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all ${timeRange === '30D' ? 'bg-primary text-white shadow-md' : 'text-muted hover:text-white hover:bg-white/5'}`}
+          <button
+            type="button"
+            className={`min-w-[116px] rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 ${timeRange === '30D' ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/20' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
             onClick={() => setTimeRange('30D')}
+            aria-pressed={timeRange === '30D'}
           >
             Last 30 Days
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 gap-7 lg:grid-cols-2 lg:gap-8">
         {/* Revenue vs Profit Chart */}
-        <div className="glass-panel p-6">
+        <div className="glass-panel p-6 md:p-7">
           <div className="mb-6">
             <h2 className="text-lg font-semibold flex items-center gap-2 mb-1">
               <TrendingUp size={18} className="text-primary" /> Revenue vs Profit
@@ -143,7 +147,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Top Selling Items (Revenue) */}
-        <div className="glass-panel p-6">
+        <div className="glass-panel p-6 md:p-7">
           <div className="mb-6">
             <h2 className="text-lg font-semibold flex items-center gap-2 mb-1">
               <Package size={18} className="text-warning" /> Top Performing Items
@@ -165,7 +169,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Daily Volume Trend */}
-      <div className="glass-panel p-6 border-t-4 border-t-primary">
+      <div className="glass-panel border-t-4 border-t-primary p-6 md:p-7">
         <div className="mb-6">
           <h2 className="text-lg font-semibold flex items-center gap-2 mb-1">
             <Activity size={18} className="text-info" /> Sales Volume Trend
