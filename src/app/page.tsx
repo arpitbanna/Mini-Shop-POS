@@ -12,7 +12,9 @@ import {
   sumProfit,
   sumRevenue,
   sumAmountReceived,
+  sumItemsSold,
 } from '@/lib/calculations';
+import { getBusinessDate, getBusinessDateRange } from '@/lib/business-day';
 
 function DashboardSkeleton() {
   return (
@@ -40,27 +42,25 @@ export default function Dashboard() {
   const { data: expenses = [], isLoading: expLoading } = useExpenses();
 
   const isLoading = salesLoading || invLoading || purLoading || expLoading;
+  const recentSales = useMemo(
+    () => [...sales].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    [sales],
+  );
 
   const stats = useMemo(() => {
     const totalProfit = sumProfit(sales);
     const totalRevenue = sumRevenue(sales);
-    const totalItemsSold = sales.reduce((acc, sale) => acc + sale.quantity, 0);
+    const totalItemsSold = sumItemsSold(sales);
     const totalPurchase = purchases.reduce((acc, p) => acc + p.amount, 0);
     const extraExpenses = expenses.reduce((acc, e) => acc + e.amount, 0);
     const amountReceived = sumAmountReceived(sales);
     const purseBalance = calculatePurseBalance(amountReceived, totalPurchase, extraExpenses);
 
-    const today = new Date();
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0).getTime();
-    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999).getTime();
+    const todayBusinessDate = getBusinessDate();
+    const salesToday = sales.filter((sale) => sale.businessDate === todayBusinessDate);
 
-    const salesToday = sales.filter((sale) => {
-      const saleDate = new Date(sale.date).getTime();
-      return saleDate >= startOfToday && saleDate <= endOfToday;
-    });
-
-    const todaySalesCount = salesToday.reduce((acc, sale) => acc + sale.quantity, 0);
-    const todayRevenue = salesToday.reduce((acc, sale) => acc + sale.total, 0);
+    const todaySalesCount = sumItemsSold(salesToday);
+    const todayRevenue = salesToday.reduce((acc, sale) => acc + sale.totalAmount, 0);
     const pendingPaymentsAmount = sumPendingAmount(sales);
     
     const inventoryWithDynamicAvailable = inventory.map(item => ({
@@ -72,21 +72,29 @@ export default function Dashboard() {
     
     const itemSalesCount = new Map<string, number>();
     sales.forEach(sale => {
-      itemSalesCount.set(sale.itemName, (itemSalesCount.get(sale.itemName) || 0) + sale.quantity);
+      sale.items.forEach((item) => {
+        itemSalesCount.set(item.name, (itemSalesCount.get(item.name) || 0) + item.quantity);
+      });
     });
     const topItems = Array.from(itemSalesCount.entries())
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
-    const last7Days = [...Array(7)].map((_, i) => {
-      const d = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }).reverse();
+    const last7BusinessDates = getBusinessDateRange(7);
+    const last7Days = last7BusinessDates.map((businessDate) => {
+      const localDay = new Date(`${businessDate}T00:00:00`);
+      return localDay.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
 
     const profitByDay = last7Days.map(dateStr => ({
       date: dateStr,
-      profit: sales.filter(s => new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) === dateStr).reduce((sum, s) => sum + s.profit, 0)
+      profit: sales
+        .filter((s) => {
+          const localDay = new Date(`${s.businessDate}T00:00:00`);
+          return localDay.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) === dateStr;
+        })
+        .reduce((sum, s) => sum + s.profit, 0)
     }));
     const maxProfit = Math.max(...profitByDay.map(d => d.profit), 100);
     const hasChartData = profitByDay.some(d => d.profit > 0);
@@ -280,18 +288,24 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {sales.slice(0, 5).map((sale) => (
+                  {recentSales.slice(0, 5).map((sale) => (
                     <tr key={sale.id} className="group hover:bg-white/[0.02] transition-colors">
                       <td className="py-4">
-                        <div className="text-muted text-xs group-hover:text-white/80 transition-colors">{formatDateTime(sale.date)}</div>
+                        <div className="text-muted text-xs group-hover:text-white/80 transition-colors">{formatDateTime(sale.createdAt)}</div>
+                        <div className="text-muted text-[10px]">Business Day: {sale.businessDate}</div>
                       </td>
                       <td className="py-4">
-                        <div className="font-medium text-white">{sale.itemName} <span className="text-muted text-xs ml-1 bg-white/10 px-1.5 py-0.5 rounded">x{sale.quantity}</span></div>
+                        <div className="font-medium text-white">
+                          {sale.items.length === 1 ? sale.items[0].name : `${sale.items.length} items`}
+                        </div>
+                        <div className="text-xs text-muted mt-1">
+                          {sale.items.map((item) => `${item.name} x${item.quantity}`).join(', ')}
+                        </div>
                         <div className="text-xs text-primary/80 mt-1 font-medium">
                           {sale.roomNo ? (sale.roomNo.match(/^\d+$/) ? `Room ${sale.roomNo}` : sale.roomNo) : '-'}
                         </div>
                       </td>
-                      <td className="py-4 font-bold text-blue-400">₹{sale.total}</td>
+                      <td className="py-4 font-bold text-blue-400">₹{sale.totalAmount}</td>
                       <td className="py-4 font-medium text-muted">₹{sale.amountPaid}</td>
                       <td className="py-4">
                         {sale.remaining <= 0 ? (

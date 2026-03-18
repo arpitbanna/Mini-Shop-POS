@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import { SaleItem } from '@/lib/types';
-import { formatDateTime } from '@/lib/utils';
+import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { useSales, useUpdatePayment } from '@/hooks/useApi';
 import { CheckCircle, X, Loader2, DollarSign } from 'lucide-react';
+import { getBusinessDate, getBusinessDateRange } from '@/lib/business-day';
+import { calculateTransactionProfit } from '@/lib/calculations';
 
 type FilterType = 'all' | 'paid' | 'partial' | 'unpaid';
 
@@ -18,7 +20,11 @@ export default function Payments() {
   const [paymentModalData, setPaymentModalData] = useState<SaleItem | null>(null);
   const [newAmountPaid, setNewAmountPaid] = useState<number>(0);
 
-  const sortedSales = [...sales].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const sortedSales = [...sales].sort((a, b) => {
+    const businessDateSort = b.businessDate.localeCompare(a.businessDate);
+    if (businessDateSort !== 0) return businessDateSort;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   const filteredSales = sortedSales.filter((sale) => {
     let statusMatch = true;
@@ -28,17 +34,14 @@ export default function Payments() {
     
     let dateMatch = true;
     if (dateFilter !== 'all') {
-      const today = new Date();
-      const offset = today.getTimezoneOffset();
-      const localToday = new Date(today.getTime() - (offset * 60 * 1000));
-      const todayStr = localToday.toISOString().split('T')[0];
-      
-      const weekAgo = new Date(localToday.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const monthAgo = new Date(localToday.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      
-      if (dateFilter === 'today') dateMatch = sale.date.startsWith(todayStr);
-      else if (dateFilter === 'week') dateMatch = sale.date >= weekAgo;
-      else if (dateFilter === 'month') dateMatch = sale.date >= monthAgo;
+      const todayBusinessDate = getBusinessDate();
+      if (dateFilter === 'today') {
+        dateMatch = sale.businessDate === todayBusinessDate;
+      } else {
+        const days = dateFilter === 'week' ? 7 : 30;
+        const allowed = new Set(getBusinessDateRange(days));
+        dateMatch = allowed.has(sale.businessDate);
+      }
     }
 
     return statusMatch && dateMatch;
@@ -48,9 +51,16 @@ export default function Payments() {
     return filteredSales.reduce((sum, item) => sum + Math.max(0, item.remaining), 0);
   };
 
+  const filteredTotals = {
+    totalBill: filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0),
+    totalProfit: filteredSales.reduce((sum, sale) => sum + calculateTransactionProfit(sale.items), 0),
+  };
+
+  const hasGroupedTransactions = filteredSales.some((sale) => sale.items.length > 1);
+
   const openPaymentModal = (sale: SaleItem) => {
     setPaymentModalData(sale);
-    setNewAmountPaid(sale.total); 
+    setNewAmountPaid(sale.totalAmount); 
   };
 
   const handlePaymentSubmit = (e: React.FormEvent) => {
@@ -99,7 +109,7 @@ export default function Payments() {
             </select>
             
             <div className="text-gray-400 text-sm bg-white/5 px-4 py-2 rounded-xl border border-white/10 flex items-center gap-2 h-11">
-              Outstanding: <span className="text-red-400 font-bold text-lg leading-none">₹{generateReport()}</span>
+              Outstanding: <span className="text-red-400 font-bold text-lg leading-none">{formatCurrency(generateReport())}</span>
             </div>
           </div>
         </div>
@@ -109,13 +119,13 @@ export default function Payments() {
              <table className="w-full text-sm">
                <thead>
                  <tr className="border-b border-white/10">
-                   {['Date', 'Item', 'Room No', 'Total Bill', 'Paid', 'Remaining', 'Status', 'Action'].map(h => <th key={h} className="pb-3 text-muted">{h}</th>)}
+                   {['Business Date', 'Date & Time', 'Item', 'Room No', 'Total Bill', 'Profit', 'Paid', 'Remaining', 'Status', 'Action'].map(h => <th key={h} className="pb-3 text-muted">{h}</th>)}
                  </tr>
                </thead>
                <tbody className="divide-y divide-white/5">
                   {[...Array(5)].map((_, i) => (
                     <tr key={i}>
-                      <td colSpan={8} className="py-2"><div className="h-12 bg-white/5 rounded-lg w-full"></div></td>
+                      <td colSpan={10} className="py-2"><div className="h-12 bg-white/5 rounded-lg w-full"></div></td>
                     </tr>
                   ))}
                </tbody>
@@ -128,10 +138,12 @@ export default function Payments() {
              <table className="w-full text-sm">
                <thead>
                  <tr className="border-b border-white/10 text-xs">
-                   <th className="font-semibold pb-3 text-muted">Date</th>
+                   <th className="font-semibold pb-3 text-muted">Business Date</th>
+                   <th className="font-semibold pb-3 text-muted">Date & Time</th>
                    <th className="font-semibold pb-3 text-muted">Item</th>
                    <th className="font-semibold pb-3 text-muted">Room No</th>
                    <th className="font-semibold pb-3 text-muted">Total Bill</th>
+                   <th className="font-semibold pb-3 text-muted">Profit</th>
                    <th className="font-semibold pb-3 text-muted">Paid</th>
                    <th className="font-semibold pb-3 text-muted">Remaining</th>
                    <th className="font-semibold pb-3 text-muted">Status</th>
@@ -141,12 +153,19 @@ export default function Payments() {
                <tbody className="divide-y divide-white/5">
                  {filteredSales.map((sale) => (
                    <tr key={sale.id} className="group hover:bg-white/[0.02] transition-all duration-200">
-                     <td className="py-4 text-xs text-muted">{formatDateTime(sale.date)}</td>
-                     <td className="py-4 font-medium text-white">{sale.itemName} <span className="text-muted text-xs bg-white/10 px-1.5 py-0.5 rounded ml-1">x{sale.quantity}</span></td>
+                     <td className="py-4 text-xs text-muted">{sale.businessDate}</td>
+                     <td className="py-4 text-xs text-muted">{formatDateTime(sale.createdAt)}</td>
+                     <td className="py-4 font-medium text-white">
+                       {sale.items.length === 1 ? sale.items[0].name : `${sale.items.length} items`}
+                       <div className="text-muted text-xs mt-1">{sale.items.map((item) => `${item.name} x${item.quantity}`).join(', ')}</div>
+                     </td>
                      <td className="py-4 text-primary/80 text-xs">{sale.roomNo ? (sale.roomNo.match(/^\d+$/) ? `Room ${sale.roomNo}` : sale.roomNo) : '-'}</td>
-                     <td className="py-4 font-semibold text-blue-400">₹{sale.total}</td>
-                     <td className="py-4 font-medium text-success">₹{sale.amountPaid}</td>
-                     <td className="py-4 font-bold text-red-400">₹{Math.max(0, sale.remaining)}</td>
+                     <td className="py-4 font-semibold text-blue-400">{formatCurrency(sale.totalAmount)}</td>
+                     <td className={`py-4 font-bold ${calculateTransactionProfit(sale.items) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                       {calculateTransactionProfit(sale.items) >= 0 ? '+' : '-'}{formatCurrency(Math.abs(calculateTransactionProfit(sale.items)))}
+                     </td>
+                     <td className="py-4 font-medium text-success">{formatCurrency(sale.amountPaid)}</td>
+                     <td className="py-4 font-bold text-red-400">{formatCurrency(Math.max(0, sale.remaining))}</td>
                      <td className="py-4">
                        {sale.remaining <= 0 ? (
                          <span className="badge badge-success">Paid</span>
@@ -170,6 +189,16 @@ export default function Payments() {
                      </td>
                    </tr>
                  ))}
+                 {hasGroupedTransactions && (
+                  <tr className="bg-white/[0.03] border-t border-white/10">
+                    <td className="py-4 text-xs text-muted" colSpan={4}>Summary (filtered)</td>
+                    <td className="py-4 font-bold text-blue-300">{formatCurrency(filteredTotals.totalBill)}</td>
+                    <td className={`py-4 font-bold ${filteredTotals.totalProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {filteredTotals.totalProfit >= 0 ? '+' : '-'}{formatCurrency(Math.abs(filteredTotals.totalProfit))}
+                    </td>
+                    <td className="py-4 text-muted" colSpan={4}></td>
+                  </tr>
+                 )}
                </tbody>
              </table>
           </div>
@@ -185,9 +214,9 @@ export default function Payments() {
             </div>
             
             <div className="mb-4 bg-white/5 p-3 rounded-xl border border-white/5 text-sm">
-              <div className="flex-between mb-1"><span className="text-muted">Item:</span> <span className="font-semibold text-white">{paymentModalData.itemName}</span></div>
-              <div className="flex-between mb-1"><span className="text-muted">Total Bill:</span> <span className="font-semibold text-white">₹{paymentModalData.total}</span></div>
-              <div className="flex-between"><span className="text-muted">Current Paid:</span> <span className="font-semibold text-success">₹{paymentModalData.amountPaid}</span></div>
+              <div className="flex-between mb-1"><span className="text-muted">Items:</span> <span className="font-semibold text-white text-right">{paymentModalData.items.map((item) => `${item.name} x${item.quantity}`).join(', ')}</span></div>
+              <div className="flex-between mb-1"><span className="text-muted">Total Bill:</span> <span className="font-semibold text-white">{formatCurrency(paymentModalData.totalAmount)}</span></div>
+              <div className="flex-between"><span className="text-muted">Current Paid:</span> <span className="font-semibold text-success">{formatCurrency(paymentModalData.amountPaid)}</span></div>
             </div>
 
             <form onSubmit={handlePaymentSubmit} className="space-y-6">
@@ -204,8 +233,8 @@ export default function Payments() {
                     required
                   />
                 </div>
-                <button type="button" onClick={() => setNewAmountPaid(paymentModalData.total)} className="w-full bg-success/10 text-success py-2 mt-3 rounded-lg border border-success/30 text-sm font-bold hover:bg-success/20 transition-colors">
-                  Full Settle (₹{paymentModalData.total})
+                <button type="button" onClick={() => setNewAmountPaid(paymentModalData.totalAmount)} className="w-full bg-success/10 text-success py-2 mt-3 rounded-lg border border-success/30 text-sm font-bold hover:bg-success/20 transition-colors">
+                  Full Settle ({formatCurrency(paymentModalData.totalAmount)})
                 </button>
               </div>
 

@@ -46,6 +46,21 @@ export function getTextProperty(properties: unknown, propertyName: string, fallb
   return typeof plainText === 'string' ? plainText : fallback;
 }
 
+export function getJsonTextProperty<T>(
+  properties: unknown,
+  propertyName: string,
+  fallback: T,
+): T {
+  const raw = getTextProperty(properties, propertyName, '');
+  if (!raw) return fallback;
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 export function getDateStartProperty(properties: unknown, propertyName: string, fallback = ''): string {
   const propsRecord = asRecord(properties);
   const prop = getNestedRecord(propsRecord, propertyName);

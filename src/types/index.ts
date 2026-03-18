@@ -9,17 +9,23 @@ export interface InventoryItem {
   dateAdded: string;
 }
 
+export interface SaleTransactionItem {
+  productId: string;
+  name: string;
+  quantity: number;
+  sellingPrice: number;
+  costPrice: number;
+  total: number;
+}
+
 export interface SaleItem {
   id: string;
-  itemId: string;
-  itemName: string;
-  date: string;
-  sellPrice: number;
-  buyPrice: number;
-  quantity: number;
-  total: number;
-  profit: number;
   roomNo: string;
+  createdAt: string;
+  businessDate: string;
+  items: SaleTransactionItem[];
+  totalAmount: number;
+  profit: number;
   amountPaid: number;
   remaining: number;
 }
@@ -39,12 +45,17 @@ export interface ExpenseItem {
 }
 
 export interface AddSalePayload {
-  itemId: string;
-  sellPrice: number;
-  quantity: number;
+  createdAt: string;
+  businessDate: string;
   roomNo: string;
+  items: Array<{
+    productId: string;
+    quantity: number;
+    sellingPrice: number;
+    costPrice: number;
+    name: string;
+  }>;
   amountPaid: number;
-  date: string;
 }
 
 export interface UpdatePaymentPayload {
@@ -52,12 +63,17 @@ export interface UpdatePaymentPayload {
   amountPaid: number;
 }
 
-export interface AddStockPayload {
+export interface StockEntryItemPayload {
   name: string;
-  buyPrice: string | number;
-  sellPrice: string | number;
-  quantity: string | number;
-  date: string;
+  buyPrice: number;
+  sellPrice: number;
+  quantity: number;
+}
+
+export interface AddStockPayload {
+  createdAt: string;
+  businessDate: string;
+  items: StockEntryItemPayload[];
 }
 
 export interface AddNamedAmountPayload {

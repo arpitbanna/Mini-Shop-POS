@@ -1,15 +1,25 @@
 # Mini Shop POS
 
-Mini Shop POS is a production-ready Point of Sale web app for small shops/hostel stores, built with Next.js App Router, TypeScript, Tailwind CSS 4, Notion API, and React Query.
+Mini Shop POS is a production-ready Point of Sale web app for hostel/hotel mini shops, built with Next.js App Router, TypeScript, Tailwind CSS 4, React Query, and Notion as backend storage.
 
-## Features
+## Project Overview
 
-- Dashboard with Revenue, Profit, Expenses, Purchases, Udhaar, and low-stock insights
-- Sales entry with payment split tracking (Paid / Partial / Unpaid)
-- Inventory management with stock in/out and edit/delete support
+This app is designed for late-night operations where calendar dates are not enough.
+
+- Business day logic: 5:00 AM to next day 5:00 AM
+- Grouped sales: one transaction can contain multiple items
+- Grouped stock entries: one stock-in operation can contain multiple items
+- Payment tracking: paid, partially paid, unpaid
+
+## Core Features
+
+- Business-day aware reporting and filtering
+- Dashboard revenue/profit/pending/stock insights
+- Record sale with shared Room No and Date & Time across all items
+- Payments page with transaction-level profit and summary rows
+- Inventory management with edit/delete and bulk "Delete All Out of Stock"
 - Purchase and expense tracking
-- Payments settlement workflow
-- Guest mode support for safe demo usage
+- Guest mode for safe demo/testing
 
 ## Tech Stack
 
@@ -19,24 +29,24 @@ Mini Shop POS is a production-ready Point of Sale web app for small shops/hostel
 - React Query (@tanstack/react-query)
 - Notion SDK (@notionhq/client)
 - Zustand
-- Sonner (toasts)
-- Lucide React (icons)
+- Sonner
+- Lucide React
 
 ## Project Structure
 
 ```text
 src/
-	app/
-	components/
-	hooks/
-	lib/
-	config/
-	types/
+  app/
+  components/
+  hooks/
+  lib/
+  config/
+  types/
 ```
 
-## Environment Variables
+## Environment Setup
 
-Create `.env.local` from `.env.example`:
+Create local environment file:
 
 ```bash
 cp .env.example .env.local
@@ -44,18 +54,29 @@ cp .env.example .env.local
 
 Required variables:
 
-- `NOTION_API_KEY`
-- `NOTION_STOCK_IN_DB_ID`
-- `NOTION_STOCK_OUT_DB_ID`
-- `NOTION_PURCHASES_DB_ID`
-- `NOTION_EXPENSES_DB_ID`
-- `ADMIN_PASSWORD`
+- NOTION_API_KEY
+- NOTION_STOCK_IN_DB_ID
+- NOTION_STOCK_OUT_DB_ID
+- NOTION_PURCHASES_DB_ID
+- NOTION_EXPENSES_DB_ID
+- ADMIN_PASSWORD
 
-Notes:
+Security notes:
 
-- `.env*` files are ignored by git.
-- `.env.example` is committed as a template.
-- Sensitive env values are used only on the server (`src/lib/notion.ts` is `server-only`).
+- Do not commit .env.local
+- .env.example contains only placeholders
+- Sensitive values are accessed server-side only
+
+## Notion Database Notes
+
+For grouped sale/stock support, STOCK_IN and STOCK_OUT databases should include:
+
+- Name (title)
+- Date (date)
+- Items (rich text JSON)
+- Business Date (rich text)
+
+Legacy single-item records are still supported by fallback parsing.
 
 ## Local Development
 
@@ -66,30 +87,42 @@ npm run dev
 
 Open http://localhost:3000
 
-## Quality Checks
+## Quality and Build
 
 ```bash
 npm run lint
 npm run build
 ```
 
-Both commands should pass before deployment.
+Current status:
 
-## Deployment (Vercel)
+- Lint passes
+- Production build passes
+- No chunk warnings reported during build
 
-1. Push the repository to GitHub.
-2. Import the repo in Vercel.
-3. Set all environment variables in Vercel Project Settings.
-4. Deploy.
+## Deployment (GitHub + Vercel)
+
+1. Push repository to GitHub
+2. Import project into Vercel
+3. Add all required environment variables in Vercel project settings
+4. Deploy
 
 Recommended:
 
-- Keep `Production` and `Preview` env values synchronized.
-- Redeploy after any env variable update.
+- Keep Preview and Production environment variables in sync
+- Redeploy after any env update
+
+## Manual QA Checklist
+
+- Create sale at 2:00 AM and verify businessDate maps to previous day
+- Create grouped sale with multiple items and verify totals/profit
+- Add grouped stock entry and verify inventory updates
+- Use Delete All Out of Stock and verify immediate inventory refresh
+- Verify Payments page totals/profit/status are accurate
 
 ## NPM Scripts
 
-- `npm run dev` - local development
-- `npm run lint` - lint checks
-- `npm run build` - production build
-- `npm run start` - run production server locally
+- npm run dev
+- npm run lint
+- npm run build
+- npm run start

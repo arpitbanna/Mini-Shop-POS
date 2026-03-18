@@ -1,145 +1,215 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useInventory, useAddSale } from '@/hooks/useApi';
-import { Save, Loader2, CheckCircle, HelpCircle, XCircle } from 'lucide-react';
+import { Save, Loader2, Plus, Trash2 } from 'lucide-react';
 import { getLocalDatetimeStr } from '@/lib/utils';
+import { getBusinessDate } from '@/lib/business-day';
 import { toast } from 'sonner';
+
+type SaleDraftItem = {
+  productId: string;
+  quantity: string;
+  sellingPrice: string;
+};
 
 export default function AddSale() {
   const router = useRouter();
   const { data: inventory = [], isLoading: invLoading } = useInventory();
   const addSale = useAddSale();
-  
-  const [showReceipt, setShowReceipt] = useState(false);
-  type LatestSaleItem = { itemName?: string, quantity: number, total: number, amountPaid: number, remaining: number };
-  const [latestSale, setLatestSale] = useState<LatestSaleItem | null>(null);
 
-  const [formData, setFormData] = useState({
-    itemId: '',
-    sellPrice: '',
+  const [draftItem, setDraftItem] = useState<SaleDraftItem>({
+    productId: '',
     quantity: '1',
-    roomNo: '',
-    amountPaid: '',
-    date: getLocalDatetimeStr(),
+    sellingPrice: '',
   });
 
-  const fieldClass = 'w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all';
+  const [transaction, setTransaction] = useState({
+    roomNo: '',
+    date: getLocalDatetimeStr(),
+    amountPaid: '',
+  });
+
+  const [items, setItems] = useState<SaleDraftItem[]>([]);
+
+  const fieldClass =
+    'w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all';
 
   const availableInventory = inventory.filter((item) => item.available > 0);
-  const selectedItem = availableInventory.find((i) => i.id === formData.itemId);
 
-  const quantityNum = Number(formData.quantity) || 0;
-  const sellPriceNum = Number(formData.sellPrice) || 0;
-  
-  const total = sellPriceNum * quantityNum;
-  const buyPrice = selectedItem ? selectedItem.buyPrice : 0;
-  const profit = total - (buyPrice * quantityNum);
-  const remaining = total - Number(formData.amountPaid || 0);
+  const selectedDraftInventory = useMemo(
+    () => availableInventory.find((item) => item.id === draftItem.productId),
+    [availableInventory, draftItem.productId],
+  );
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const newFormData = { ...formData, [e.target.name]: e.target.value };
-    
-    let currentQty = quantityNum;
-    let currentPrice = sellPriceNum;
+  const itemRows = useMemo(() => {
+    return items
+      .map((entry) => {
+        const product = availableInventory.find((item) => item.id === entry.productId);
+        if (!product) return null;
 
-    if (e.target.name === 'itemId') {
-      const newlySelected = availableInventory.find((i) => i.id === e.target.value);
-      if (newlySelected) {
-        newFormData.sellPrice = newlySelected.sellPrice.toString();
-        currentPrice = newlySelected.sellPrice;
-      }
-    } else if (e.target.name === 'quantity') {
-      currentQty = Number(e.target.value) || 0;
-    } else if (e.target.name === 'sellPrice') {
-      currentPrice = Number(e.target.value) || 0;
+        const quantity = Number(entry.quantity || 0);
+        const sellingPrice = Number(entry.sellingPrice || 0);
+        const lineTotal = quantity * sellingPrice;
+        const lineProfit = (sellingPrice - product.buyPrice) * quantity;
+
+        return {
+          ...entry,
+          name: product.name,
+          costPrice: product.buyPrice,
+          available: product.available,
+          quantity,
+          sellingPrice,
+          lineTotal,
+          lineProfit,
+        };
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+  }, [availableInventory, items]);
+
+  const totalAmount = itemRows.reduce((acc, row) => acc + row.lineTotal, 0);
+  const totalProfit = itemRows.reduce((acc, row) => acc + row.lineProfit, 0);
+  const totalQty = itemRows.reduce((acc, row) => acc + row.quantity, 0);
+  const amountPaid = Number(transaction.amountPaid || 0);
+  const remaining = Math.max(0, totalAmount - amountPaid);
+
+  const usedQtyByProduct = useMemo(() => {
+    const map = new Map<string, number>();
+    items.forEach((entry) => {
+      map.set(entry.productId, (map.get(entry.productId) || 0) + Number(entry.quantity || 0));
+    });
+    return map;
+  }, [items]);
+
+  const handleDraftChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const next = { ...draftItem, [e.target.name]: e.target.value };
+
+    if (e.target.name === 'productId') {
+      const selected = availableInventory.find((item) => item.id === e.target.value);
+      next.sellingPrice = selected ? String(selected.sellPrice) : '';
+      next.quantity = '1';
     }
 
-    if (['itemId', 'quantity', 'sellPrice'].includes(e.target.name)) {
-      newFormData.amountPaid = (currentQty * currentPrice).toString();
-    }
-    
-    setFormData(newFormData);
+    setDraftItem(next);
   };
 
-  const setAmountPaid = (amount: number) => {
-    setFormData({ ...formData, amountPaid: amount.toString() });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.itemId) {
-      toast.error('Please select an item');
+  const addItem = () => {
+    if (!draftItem.productId) {
+      toast.error('Select an item first');
       return;
     }
-    if (quantityNum > (selectedItem?.available || 0)) {
-       toast.error(`Only ${selectedItem?.available} items available in stock`);
-       return;
+
+    const quantity = Number(draftItem.quantity || 0);
+    const sellingPrice = Number(draftItem.sellingPrice || 0);
+    const selected = availableInventory.find((item) => item.id === draftItem.productId);
+
+    if (!selected) {
+      toast.error('Item not available in inventory');
+      return;
     }
+    if (quantity <= 0) {
+      toast.error('Quantity must be at least 1');
+      return;
+    }
+    if (sellingPrice < 0) {
+      toast.error('Selling price cannot be negative');
+      return;
+    }
+
+    const alreadyUsed = usedQtyByProduct.get(draftItem.productId) || 0;
+    if (alreadyUsed + quantity > selected.available) {
+      toast.error(`Only ${selected.available - alreadyUsed} more units available for ${selected.name}`);
+      return;
+    }
+
+    setItems((prev) => [...prev, draftItem]);
+    setDraftItem({ productId: '', quantity: '1', sellingPrice: '' });
+  };
+
+  const removeItem = (index: number) => {
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const submitSale = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (itemRows.length === 0) {
+      toast.error('Add at least one item');
+      return;
+    }
+
+    const createdAt = new Date(transaction.date).toISOString();
+    const businessDate = getBusinessDate(5, new Date(transaction.date));
 
     addSale.mutate(
       {
-        itemId: formData.itemId,
-        sellPrice: sellPriceNum,
-        quantity: quantityNum,
-        roomNo: formData.roomNo.trim(),
-        amountPaid: Number(formData.amountPaid || 0),
-        date: new Date(formData.date).toISOString()
+        roomNo: transaction.roomNo.trim(),
+        createdAt,
+        businessDate,
+        amountPaid,
+        items: itemRows.map((row) => ({
+          productId: row.productId,
+          name: row.name,
+          quantity: row.quantity,
+          sellingPrice: row.sellingPrice,
+          costPrice: row.costPrice,
+        })),
       },
       {
         onSuccess: () => {
-          setLatestSale({
-            itemName: selectedItem?.name,
-            quantity: quantityNum,
-            total,
-            amountPaid: Number(formData.amountPaid || 0),
-            remaining: Math.max(0, remaining),
-          });
-          setShowReceipt(true);
-        }
-      }
+          toast.success('Sale transaction saved');
+          router.push('/payments');
+        },
+      },
     );
-  };
-
-  const handleCloseReceipt = () => {
-    setShowReceipt(false);
-    router.push('/payments');
-  };
-
-  const handleNewSale = () => {
-    setShowReceipt(false);
-    setFormData({
-      itemId: '',
-      sellPrice: '',
-      quantity: '1',
-      roomNo: '',
-      amountPaid: '',
-      date: getLocalDatetimeStr(),
-    });
   };
 
   return (
     <div className="max-w-6xl mx-auto pb-12 px-4">
       <h1 className="mb-6 text-xl font-semibold tracking-tight text-center">Record a Sale</h1>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative">
-        <div className="glass-panel relative overflow-hidden group border-white/10 hover:border-white/20 transition-all duration-200">
-          <div className="absolute -left-20 -top-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none group-hover:bg-primary/10 transition-colors"></div>
-          
-          <form onSubmit={handleSubmit} id="sale-form" className="relative z-10 space-y-6">
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="glass-panel space-y-6 border-white/10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="itemId" className="text-sm text-gray-400 mb-2 block">Select Item</label>
-              <select 
-                id="itemId"
-                name="itemId" 
-                required 
-                value={formData.itemId}
-                onChange={handleChange}
+              <label htmlFor="roomNo" className="text-sm text-gray-400 mb-2 block">Room No/Name (Optional)</label>
+              <input
+                id="roomNo"
+                name="roomNo"
+                type="text"
+                value={transaction.roomNo}
+                onChange={(e) => setTransaction((prev) => ({ ...prev, roomNo: e.target.value }))}
+                className={fieldClass}
+                placeholder="e.g. 306 or Lobby"
+              />
+            </div>
+            <div>
+              <label htmlFor="date" className="text-sm text-gray-400 mb-2 block">Date & Time</label>
+              <input
+                id="date"
+                name="date"
+                type="datetime-local"
+                required
+                value={transaction.date}
+                onChange={(e) => setTransaction((prev) => ({ ...prev, date: e.target.value }))}
+                className={fieldClass}
+              />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl border border-white/10 bg-white/5 space-y-4">
+            <div>
+              <label htmlFor="productId" className="text-sm text-gray-400 mb-2 block">Select Item</label>
+              <select
+                id="productId"
+                name="productId"
+                value={draftItem.productId}
+                onChange={handleDraftChange}
                 className={fieldClass}
                 disabled={invLoading}
               >
-                <option value="" disabled>-- {invLoading ? 'Loading Inventory...' : 'Select an item'} --</option>
+                <option value="">-- {invLoading ? 'Loading inventory...' : 'Select item'} --</option>
                 {availableInventory.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.name} ({item.available} in stock)
@@ -148,210 +218,110 @@ export default function AddSale() {
               </select>
             </div>
 
-            {selectedItem && (
-               <div className="text-success bg-success/10 px-3 py-2 rounded-lg border border-success/20 inline-block text-xs font-semibold uppercase tracking-wider">
-                 Cost Price: ₹{selectedItem.buyPrice} / unit
-               </div>
-            )}
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="sellPrice" className="text-sm text-gray-400 mb-2 block">Selling Price (₹)</label>
-                <input 
-                  id="sellPrice"
-                  name="sellPrice" 
-                  type="number" 
-                  min="0" 
-                  step="0.01" 
-                  required 
-                  placeholder="0.00"
-                  value={formData.sellPrice}
-                  onChange={handleChange}
+                <label htmlFor="sellingPrice" className="text-sm text-gray-400 mb-2 block">Selling Price (₹)</label>
+                <input
+                  id="sellingPrice"
+                  name="sellingPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={draftItem.sellingPrice}
+                  onChange={handleDraftChange}
                   className={fieldClass}
+                  placeholder="0.00"
                 />
               </div>
               <div>
                 <label htmlFor="quantity" className="text-sm text-gray-400 mb-2 block">Quantity</label>
-                <input 
+                <input
                   id="quantity"
-                  name="quantity" 
-                  type="number" 
-                  min="1" 
-                  max={selectedItem?.available || undefined}
-                  required 
+                  name="quantity"
+                  type="number"
+                  min="1"
+                  value={draftItem.quantity}
+                  onChange={handleDraftChange}
+                  className={fieldClass}
                   placeholder="1"
-                  value={formData.quantity}
-                  onChange={handleChange}
-                  className={fieldClass}
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="roomNo" className="text-sm text-gray-400 mb-2 block">Room No/Name (Optional)</label>
-                <input 
-                  id="roomNo"
-                  name="roomNo" 
-                  type="text" 
-                  placeholder="e.g. 306 or Room A"
-                  value={formData.roomNo}
-                  onChange={handleChange}
-                  className={fieldClass}
-                />
-              </div>
-              <div>
-              <label htmlFor="date" className="text-sm text-gray-400 mb-2 block">Date & Time</label>
-              <input 
-                id="date"
-                name="date" 
-                type="datetime-local" 
-                required
-                value={formData.date}
-                onChange={handleChange}
-                className={fieldClass}
-              />
-            </div>
-            </div>
+            {selectedDraftInventory && (
+              <p className="text-xs text-success">Cost Price: ₹{selectedDraftInventory.buyPrice} per unit</p>
+            )}
 
-            <div className="p-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-md transition-all duration-200">
-              <label className="text-sm text-gray-400 font-semibold mb-3 border-b border-white/10 pb-2 block">Quick Payment Options</label>
-              <div className="grid grid-cols-3 gap-3 mt-3">
-                <button 
-                  type="button" 
-                  className="flex flex-col items-center justify-center gap-1 bg-success/10 hover:bg-success/20 border border-success/30 text-success py-2 rounded-xl transition-all hover:scale-105 hover:shadow-lg active:scale-95" 
-                  onClick={() => setAmountPaid(total)}
-                >
-                  <CheckCircle size={18} />
-                  <span className="text-xs font-bold">Paid Full</span>
-                </button>
-                <button 
-                  type="button" 
-                  className="flex flex-col items-center justify-center gap-1 bg-warning/10 hover:bg-warning/20 border border-warning/30 text-warning py-2 rounded-xl transition-all hover:scale-105 hover:shadow-lg active:scale-95"
-                  onClick={() => setAmountPaid(total / 2)}
-                >
-                  <HelpCircle size={18} />
-                  <span className="text-xs font-bold font-sans">Half</span>
-                </button>
-                <button 
-                  type="button" 
-                  className="flex flex-col items-center justify-center gap-1 bg-danger/10 hover:bg-danger/20 border border-danger/30 text-danger py-2 rounded-xl transition-all hover:scale-105 hover:shadow-lg active:scale-95"
-                  onClick={() => setAmountPaid(0)}
-                >
-                  <XCircle size={18} />
-                  <span className="text-xs font-bold font-sans">Udhaar</span>
-                </button>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={addItem}
+              className="btn btn-outline w-full border-white/20 hover:bg-white/10"
+            >
+              <Plus size={16} /> Add Item
+            </button>
+          </div>
 
-            <div>
-              <label htmlFor="amountPaid" className="text-sm text-gray-400 mb-2 block">Amount Paid By Customer (₹)</label>
-              <input 
-                id="amountPaid"
-                name="amountPaid" 
-                type="number" 
-                min="0"
-                step="0.01" 
-                required 
-                value={formData.amountPaid}
-                onChange={handleChange}
-                className={`${fieldClass} border-primary/50 bg-primary/5 text-xl font-bold`}
-              />
-            </div>
-          </form>
+          <div>
+            <label htmlFor="amountPaid" className="text-sm text-gray-400 mb-2 block">Amount Paid (₹)</label>
+            <input
+              id="amountPaid"
+              name="amountPaid"
+              type="number"
+              min="0"
+              step="0.01"
+              value={transaction.amountPaid}
+              onChange={(e) => setTransaction((prev) => ({ ...prev, amountPaid: e.target.value }))}
+              className={fieldClass}
+              placeholder="0.00"
+            />
+          </div>
         </div>
 
-        {/* Live Calculation Panel */}
-        <div className="glass-panel flex flex-col h-fit sticky top-24 border-primary/20 shadow-[0_0_30px_rgba(59,130,246,0.1)] transition-all duration-200">
-          <h2 className="mb-6 pb-4 border-b border-white/10 flex items-center gap-2 text-xl font-semibold">
-             Transaction Summary
-          </h2>
-          
-          <div className="flex-between mb-4">
-            <span className="text-sm text-gray-400 font-medium">Total Value:</span>
-            <span className="text-3xl font-bold">₹{total}</span>
-          </div>
-          
-          <div className="flex-between mb-4">
-            <span className="text-sm text-gray-400 font-medium">Amount Paid:</span>
-            <span className="text-success text-xl font-bold">
-              ₹{formData.amountPaid || '0'}
-            </span>
+        <form onSubmit={submitSale} className="glass-panel flex flex-col border-primary/20">
+          <h2 className="mb-4 text-lg font-semibold">Transaction Summary</h2>
+
+          <div className="space-y-3 mb-4 max-h-72 overflow-y-auto pr-1">
+            {itemRows.length === 0 ? (
+              <div className="text-sm text-muted border border-dashed border-white/10 rounded-xl p-4 text-center">
+                No items added yet.
+              </div>
+            ) : (
+              itemRows.map((row, idx) => (
+                <div key={`${row.productId}-${idx}`} className="p-3 rounded-xl bg-white/5 border border-white/10 flex-between gap-3">
+                  <div>
+                    <div className="font-medium text-white">{row.name}</div>
+                    <div className="text-xs text-muted">Qty {row.quantity} x ₹{row.sellingPrice}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold text-blue-300">₹{row.lineTotal}</div>
+                    <button type="button" onClick={() => removeItem(idx)} className="text-xs text-danger hover:text-red-300 mt-1 inline-flex items-center gap-1">
+                      <Trash2 size={12} /> Remove
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
-          <div className="flex-between mb-6 pb-6 border-b border-white/10">
-            <span className="text-sm text-gray-400 font-medium">Remaining (Udhaar):</span>
-            <div className="text-right">
-              <span className={`text-xl font-bold ${remaining > 0 ? 'text-danger' : 'text-success'}`}>
-                ₹{Math.max(0, remaining)}
-              </span>
-              {remaining > 0 && <div className="text-xs text-danger mt-1 font-medium">Pending Balance</div>}
-            </div>
+          <div className="space-y-2 text-sm border-t border-white/10 pt-4">
+            <div className="flex-between"><span className="text-muted">Items</span><span>{totalQty}</span></div>
+            <div className="flex-between"><span className="text-muted">Total Amount</span><span className="font-semibold">₹{totalAmount}</span></div>
+            <div className="flex-between"><span className="text-muted">Amount Paid</span><span className="text-success">₹{amountPaid}</span></div>
+            <div className="flex-between"><span className="text-muted">Remaining</span><span className={remaining > 0 ? 'text-danger font-semibold' : 'text-success font-semibold'}>₹{remaining}</span></div>
+            <div className="flex-between"><span className="text-muted">Estimated Profit</span><span className="text-green-400 font-semibold">₹{totalProfit}</span></div>
+            <div className="flex-between"><span className="text-muted">Business Date</span><span>{getBusinessDate(5, new Date(transaction.date))}</span></div>
           </div>
 
-          <div className="flex-between mb-8 bg-white/5 p-4 rounded-xl border border-white/5 shadow-inner">
-            <span className="text-sm text-gray-400 font-medium">Estimated Profit:</span>
-            <span className="text-green-400 text-xl font-bold">
-              +₹{profit}
-            </span>
-          </div>
-
-          <button 
-            type="submit" 
-            form="sale-form"
-            className="btn w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:scale-100 disabled:shadow-none" 
-            disabled={addSale.isPending}
+          <button
+            type="submit"
+            disabled={addSale.isPending || itemRows.length === 0}
+            className="btn w-full mt-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:opacity-50"
           >
-            {addSale.isPending ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-            <span>{addSale.isPending ? 'Processing...' : 'Confirm Sale'}</span>
+            {addSale.isPending ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+            <span>{addSale.isPending ? 'Saving...' : 'Confirm Sale'}</span>
           </button>
-        </div>
+        </form>
       </div>
-
-      {/* Receipt Modal */}
-      {showReceipt && latestSale && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="glass-panel max-w-sm w-full p-6 flex flex-col relative shadow-2xl border-white/20 scale-in-center overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-success/50 to-success"></div>
-            
-            <div className="text-center mb-6 mt-2">
-              <div className="bg-success/20 p-3 rounded-full w-fit mx-auto mb-3 border border-success/30">
-                <CheckCircle size={32} className="text-success" />
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-1">Sale Successful!</h2>
-              <p className="text-sm text-muted font-medium tracking-wide uppercase">Receipt Generated</p>
-            </div>
-
-            <div className="bg-white/5 rounded-xl border border-white/10 p-5 mb-6 shadow-inner">
-              <div className="flex-between border-b border-white/10 pb-3 mb-3">
-                <span className="text-sm text-muted">Item</span>
-                <span className="font-semibold text-right">{latestSale.itemName} <span className="text-muted font-normal text-xs ml-1 bg-white/10 px-1.5 py-0.5 rounded">x{latestSale.quantity}</span></span>
-              </div>
-              <div className="flex-between mb-2">
-                <span className="text-sm text-muted">Total Amount</span>
-                <span className="font-semibold">₹{latestSale.total}</span>
-              </div>
-              <div className="flex-between mb-2">
-                <span className="text-sm text-muted">Amount Paid</span>
-                <span className="font-semibold text-success">₹{latestSale.amountPaid}</span>
-              </div>
-              <div className="flex-between border-t border-white/10 pt-3 mt-3">
-                <span className="text-sm font-semibold uppercase tracking-wider">Remaining</span>
-                <span className={`font-bold ${latestSale.remaining > 0 ? 'text-danger' : 'text-success'}`}>₹{latestSale.remaining}</span>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button onClick={handleNewSale} className="flex-1 btn btn-outline py-3 border-white/20 hover:bg-white/10 text-sm">
-                New Sale
-              </button>
-              <button onClick={handleCloseReceipt} className="flex-1 btn py-3 shadow-lg shadow-primary/20 text-sm">
-                Done & Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

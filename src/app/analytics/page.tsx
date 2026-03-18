@@ -6,6 +6,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area, Legend
 } from 'recharts';
 import { TrendingUp, Package, Activity } from 'lucide-react';
+import { getBusinessDateRange } from '@/lib/business-day';
 
 function AnalyticsSkeleton() {
   return (
@@ -46,22 +47,22 @@ export default function AnalyticsPage() {
 
   const chartData = useMemo(() => {
     const daysCount = timeRange === '7D' ? 7 : 30;
-    const today = new Date();
-    
-    // Generate dates array
-    const dates = [...Array(daysCount)].map((_, i) => {
-      const d = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }).reverse();
 
-    // Map sales to dates
-    return dates.map(dateStr => {
-      const daySales = sales.filter(s => new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) === dateStr);
+    const businessDates = getBusinessDateRange(daysCount);
+
+    return businessDates.map((businessDate) => {
+      const localDay = new Date(`${businessDate}T00:00:00`);
+      const dateStr = localDay.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const daySales = sales.filter((s) => s.businessDate === businessDate);
+
       return {
         date: dateStr,
-        Revenue: daySales.reduce((sum, s) => sum + s.total, 0),
+        Revenue: daySales.reduce((sum, s) => sum + s.totalAmount, 0),
         Profit: daySales.reduce((sum, s) => sum + s.profit, 0),
-        ItemsSold: daySales.reduce((sum, s) => sum + s.quantity, 0)
+        ItemsSold: daySales.reduce(
+          (sum, s) => sum + s.items.reduce((itemAcc, item) => itemAcc + item.quantity, 0),
+          0,
+        ),
       };
     });
   }, [sales, timeRange]);
@@ -69,11 +70,13 @@ export default function AnalyticsPage() {
   const topSellingData = useMemo(() => {
     const itemSalesCount = new Map<string, { count: number, revenue: number, profit: number }>();
     sales.forEach(sale => {
-      const existing = itemSalesCount.get(sale.itemName) || { count: 0, revenue: 0, profit: 0 };
-      itemSalesCount.set(sale.itemName, {
-        count: existing.count + sale.quantity,
-        revenue: existing.revenue + sale.total,
-        profit: existing.profit + sale.profit
+      sale.items.forEach((item) => {
+        const existing = itemSalesCount.get(item.name) || { count: 0, revenue: 0, profit: 0 };
+        itemSalesCount.set(item.name, {
+          count: existing.count + item.quantity,
+          revenue: existing.revenue + item.total,
+          profit: existing.profit + (item.sellingPrice - item.costPrice) * item.quantity,
+        });
       });
     });
     

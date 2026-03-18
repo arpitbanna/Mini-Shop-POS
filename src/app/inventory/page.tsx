@@ -4,12 +4,13 @@ import { useState, useMemo } from 'react';
 import { InventoryItem } from '@/lib/types';
 import Link from 'next/link';
 import { PlusCircle, Search, Edit2, Trash2, X, AlertTriangle, Loader2 } from 'lucide-react';
-import { formatDateTime } from '@/lib/utils';
-import { useInventory, useDeleteInventory, useUpdateInventory } from '@/hooks/useApi';
+import { formatCurrency, formatDateTime } from '@/lib/utils';
+import { useInventory, useDeleteInventory, useDeleteOutOfStockInventory, useUpdateInventory } from '@/hooks/useApi';
 
 export default function Inventory() {
   const { data: inventory = [], isLoading } = useInventory();
   const deleteMutation = useDeleteInventory();
+  const deleteOutOfStockMutation = useDeleteOutOfStockInventory();
   const updateMutation = useUpdateInventory();
 
   const [search, setSearch] = useState('');
@@ -18,6 +19,7 @@ export default function Inventory() {
 
   const [editItem, setEditItem] = useState<InventoryItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<InventoryItem | null>(null);
+  const [showDeleteOutOfStockModal, setShowDeleteOutOfStockModal] = useState(false);
 
   const inventoryWithAvailable = useMemo(() => {
     return inventory.map((item) => ({
@@ -67,13 +69,29 @@ export default function Inventory() {
     });
   };
 
+  const handleDeleteOutOfStock = () => {
+    deleteOutOfStockMutation.mutate(undefined, {
+      onSuccess: () => setShowDeleteOutOfStockModal(false),
+    });
+  };
+
   return (
     <div className="pb-12">
       <div className="flex-between mb-8">
         <h1 className="mb-0 text-xl font-semibold tracking-tight">Inventory Management</h1>
-        <Link href="/add-stock" className="btn btn-outline hover:bg-white/5 bg-white/[0.02] border-white/10 py-2.5">
-          <PlusCircle size={18} className="text-primary" /> Add New Stock
-        </Link>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowDeleteOutOfStockModal(true)}
+            className="btn btn-danger py-2.5 px-4"
+            disabled={deleteOutOfStockMutation.isPending}
+          >
+            {deleteOutOfStockMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+            Delete All Out of Stock
+          </button>
+          <Link href="/add-stock" className="btn btn-outline hover:bg-white/5 bg-white/[0.02] border-white/10 py-2.5">
+            <PlusCircle size={18} className="text-primary" /> Add New Stock
+          </Link>
+        </div>
       </div>
 
       <div className="glass-panel p-6 transition-all duration-200">
@@ -157,9 +175,11 @@ export default function Inventory() {
                       <div className="text-muted text-xs group-hover:text-white/80 transition-colors">{formatDateTime(item.dateAdded!)}</div>
                     </td>
                     <td className="py-4 font-semibold text-white">{item.name}</td>
-                    <td className="py-4 text-muted">₹{item.buyPrice}</td>
-                    <td className="py-4 text-white">₹{item.sellPrice || 0}</td>
-                    <td className="py-4 font-bold text-green-400">₹{(item.sellPrice || 0) - item.buyPrice}</td>
+                    <td className="py-4 text-muted">{formatCurrency(item.buyPrice)}</td>
+                    <td className="py-4 text-white">{formatCurrency(item.sellPrice || 0)}</td>
+                    <td className={`py-4 font-bold ${((item.sellPrice || 0) - item.buyPrice) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {((item.sellPrice || 0) - item.buyPrice) >= 0 ? '+' : '-'}{formatCurrency(Math.abs((item.sellPrice || 0) - item.buyPrice))}
+                    </td>
                     <td className="py-4 text-xs text-muted">
                       <span className="text-white">{item.quantityIn}</span> / <span className="opacity-70">{item.quantityOut}</span>
                     </td>
@@ -289,6 +309,40 @@ export default function Inventory() {
             </div>
             
             {/* Background warning glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-danger/5 blur-3xl rounded-full z-0 pointer-events-none"></div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Out-of-Stock Confirmation Modal */}
+      {showDeleteOutOfStockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="glass-panel max-w-sm w-full p-6 flex flex-col relative shadow-2xl border-danger/20 scale-in-center">
+            <div className="text-center mb-6 mt-2 relative z-10">
+              <div className="bg-danger/20 p-4 rounded-full w-fit mx-auto mb-4 border border-danger/30">
+                <AlertTriangle size={32} className="text-danger" />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2">Delete All Out of Stock?</h2>
+              <p className="text-sm text-muted">Are you sure? This will remove all out-of-stock items.</p>
+            </div>
+
+            <div className="flex gap-3 relative z-10 mt-2">
+              <button
+                onClick={() => setShowDeleteOutOfStockModal(false)}
+                className="flex-1 btn btn-outline py-2 border-white/20 hover:bg-white/10 text-sm"
+                disabled={deleteOutOfStockMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteOutOfStock}
+                className="flex-1 btn btn-danger py-2 shadow-lg shadow-danger/20 text-sm"
+                disabled={deleteOutOfStockMutation.isPending}
+              >
+                {deleteOutOfStockMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : 'Yes, Delete'}
+              </button>
+            </div>
+
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-danger/5 blur-3xl rounded-full z-0 pointer-events-none"></div>
           </div>
         </div>

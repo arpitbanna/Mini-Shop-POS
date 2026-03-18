@@ -15,6 +15,7 @@ import {
 } from '@/types';
 import { queryConfig, queryKeys } from '@/config/queryKeys';
 import { toast } from 'sonner';
+import { getBusinessDate } from '@/lib/business-day';
 
 // MOCK DATA for Guest Mode
 const MOCK_INVENTORY: InventoryItem[] = [
@@ -24,9 +25,45 @@ const MOCK_INVENTORY: InventoryItem[] = [
 ];
 
 const MOCK_SALES: SaleItem[] = [
-  { id: 's1', itemId: '1', itemName: 'Maggi', date: new Date().toISOString(), sellPrice: 15, buyPrice: 10, quantity: 2, total: 30, profit: 10, roomNo: '101', amountPaid: 30, remaining: 0 },
-  { id: 's2', itemId: '2', itemName: 'Coke 250ml', date: new Date().toISOString(), sellPrice: 20, buyPrice: 15, quantity: 1, total: 20, profit: 5, roomNo: '102', amountPaid: 10, remaining: 10 },
-  { id: 's3', itemId: '3', itemName: 'Lays Magic Masala', date: new Date().toISOString(), sellPrice: 10, buyPrice: 8, quantity: 5, total: 50, profit: 10, roomNo: '204', amountPaid: 0, remaining: 50 },
+  {
+    id: 's1',
+    roomNo: '101',
+    createdAt: new Date().toISOString(),
+    businessDate: getBusinessDate(),
+    items: [
+      { productId: '1', name: 'Maggi', quantity: 2, sellingPrice: 15, costPrice: 10, total: 30 },
+    ],
+    totalAmount: 30,
+    profit: 10,
+    amountPaid: 30,
+    remaining: 0,
+  },
+  {
+    id: 's2',
+    roomNo: '102',
+    createdAt: new Date().toISOString(),
+    businessDate: getBusinessDate(),
+    items: [
+      { productId: '2', name: 'Coke 250ml', quantity: 1, sellingPrice: 20, costPrice: 15, total: 20 },
+    ],
+    totalAmount: 20,
+    profit: 5,
+    amountPaid: 10,
+    remaining: 10,
+  },
+  {
+    id: 's3',
+    roomNo: '204',
+    createdAt: new Date().toISOString(),
+    businessDate: getBusinessDate(),
+    items: [
+      { productId: '3', name: 'Lays Magic Masala', quantity: 5, sellingPrice: 10, costPrice: 8, total: 50 },
+    ],
+    totalAmount: 50,
+    profit: 10,
+    amountPaid: 0,
+    remaining: 50,
+  },
 ];
 
 const MOCK_PURCHASES: PurchaseItem[] = [
@@ -287,6 +324,52 @@ export function useDeleteInventory() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all }),
     onError: (error: unknown) => {
       toast.error(error instanceof Error ? error.message : 'Unable to delete inventory item');
+    },
+  });
+}
+
+export function useDeleteOutOfStockInventory() {
+  const { isGuest } = useAuthStore();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (isGuest) {
+        toast.info('Guest Mode: Action simulated.');
+        return Promise.resolve({ success: true, deletedCount: 0 });
+      }
+      const res = await fetch('/api/inventory?mode=out-of-stock', { method: 'DELETE' });
+      if (!res.ok) {
+        const errorBody = (await res.json().catch(() => null)) as ApiErrorResponse | null;
+        throw new Error(errorBody?.error || 'Failed to delete out-of-stock items');
+      }
+      return (await res.json()) as ApiSuccessResponse & { deletedCount?: number };
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.inventory.all });
+      const previousInventory = queryClient.getQueriesData<InventoryItem[]>({ queryKey: queryKeys.inventory.all });
+
+      queryClient.setQueriesData<InventoryItem[]>({ queryKey: queryKeys.inventory.all }, (current) => {
+        if (!current) return current;
+        return current.filter((item) => item.available > 0);
+      });
+
+      return { previousInventory };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all });
+      const deletedCount = data.deletedCount || 0;
+      toast.success(
+        deletedCount > 0
+          ? `${deletedCount} out-of-stock item${deletedCount > 1 ? 's' : ''} deleted`
+          : 'No out-of-stock items to delete',
+      );
+    },
+    onError: (error: unknown, _variables, context) => {
+      context?.previousInventory?.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
+      toast.error(error instanceof Error ? error.message : 'Unable to delete out-of-stock items');
     },
   });
 }

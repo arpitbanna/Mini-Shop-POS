@@ -20,3 +20,11 @@ export function getLocalDatetimeStr() {
   const localIso = new Date(d.getTime() - offset).toISOString();
   return localIso.substring(0, 16);
 }
+
+export function formatCurrency(value: number, currency = 'INR', locale = 'en-IN') {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
