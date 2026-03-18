@@ -77,39 +77,37 @@ export default function Inventory() {
       </div>
 
       <div className="glass-panel p-6 transition-all duration-200">
-        <div className="mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="flex flex-col md:flex-row gap-4 flex-1 w-full relative z-10">
-            <div className="relative flex-1 w-full">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted"><Search size={20} /></span>
-              <input 
-                type="text" 
-                placeholder="Search items..." 
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="input-glass pl-12 pr-4 w-full mb-0 bg-white/5 backdrop-blur-xl border border-white/10 h-14 rounded-xl text-base shadow-sm transition-all duration-200"
-              />
-            </div>
-            <select 
-              value={availabilityFilter} 
-              onChange={(e) => setAvailabilityFilter(e.target.value)}
-              className="input-glass w-full md:w-auto mb-0 bg-white/5 backdrop-blur-xl border border-white/10 h-14 rounded-xl px-4 text-sm cursor-pointer shadow-sm transition-all duration-200"
-            >
-              <option value="ALL">All Items</option>
-              <option value="IN_STOCK">In Stock (&gt; 0)</option>
-              <option value="LOW">Low Stock (&lt; 5)</option>
-              <option value="OUT_OF_STOCK">Out of Stock</option>
-            </select>
-            <select 
-              value={sortFilter} 
-              onChange={(e) => setSortFilter(e.target.value)}
-              className="input-glass w-full md:w-auto mb-0 bg-white/5 backdrop-blur-xl border border-white/10 h-14 rounded-xl px-4 text-sm cursor-pointer shadow-sm transition-all duration-200"
-            >
-              <option value="date">Sort by Date</option>
-              <option value="profit">Sort by Profit</option>
-              <option value="stock">Sort by Stock</option>
-            </select>
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_220px_200px_auto] gap-4 items-stretch xl:items-center">
+          <div className="relative min-w-0 md:col-span-2 xl:col-span-1">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted"><Search size={20} /></span>
+            <input 
+              type="text" 
+              placeholder="Search items..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input-glass pl-12 pr-4 w-full min-w-0 mb-0 bg-white/5 backdrop-blur-xl border border-white/10 h-12 rounded-xl text-base shadow-sm transition-all duration-200"
+            />
           </div>
-          <div className="text-secondary text-sm whitespace-nowrap bg-white/5 px-4 py-2 rounded-lg border border-white/5">
+          <select 
+            value={availabilityFilter} 
+            onChange={(e) => setAvailabilityFilter(e.target.value)}
+            className="input-glass w-full min-w-0 mb-0 bg-white/5 backdrop-blur-xl border border-white/10 h-12 rounded-xl px-4 text-sm cursor-pointer shadow-sm transition-all duration-200"
+          >
+            <option value="ALL">All Items</option>
+            <option value="IN_STOCK">In Stock (&gt; 0)</option>
+            <option value="LOW">Low Stock (&lt; 5)</option>
+            <option value="OUT_OF_STOCK">Out of Stock</option>
+          </select>
+          <select 
+            value={sortFilter} 
+            onChange={(e) => setSortFilter(e.target.value)}
+            className="input-glass w-full min-w-0 mb-0 bg-white/5 backdrop-blur-xl border border-white/10 h-12 rounded-xl px-4 text-sm cursor-pointer shadow-sm transition-all duration-200"
+          >
+            <option value="date">Sort by Date</option>
+            <option value="profit">Sort by Profit</option>
+            <option value="stock">Sort by Stock</option>
+          </select>
+          <div className="text-secondary text-sm whitespace-nowrap bg-white/5 px-4 py-2 rounded-lg border border-white/5 self-start xl:self-center md:col-span-2 xl:col-span-1 xl:justify-self-end">
             Showing <strong>{filteredInventory.length}</strong> items
           </div>
         </div>

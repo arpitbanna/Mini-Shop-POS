@@ -3,6 +3,7 @@ import { notion, STOCK_IN_DB_ID, STOCK_OUT_DB_ID } from '@/lib/notion';
 import { InventoryItem } from '@/lib/types';
 import {
   asNotionResult,
+  getDateStartProperty,
   getErrorMessage,
   getNumberProperty,
   getRelationFirstId,
@@ -33,7 +34,7 @@ export async function GET() {
       const buyPriceProp = getNumberProperty(page.properties, 'Buy Price', 0);
       const sellPriceProp = getNumberProperty(page.properties, 'Sell Price', 0);
       const quantityInProp = getNumberProperty(page.properties, 'Quantity', 0);
-      const dateAddedProp = page.created_time || '';
+      const dateAddedProp = getDateStartProperty(page.properties, 'Date', page.created_time || '');
 
       inventoryMap.set(page.id, {
         id: page.id,
