@@ -42,7 +42,7 @@ export interface AddSalePayload {
   itemId: string;
   sellPrice: number;
   quantity: number;
-  roomNo: number;
+  roomNo: string;
   amountPaid: number;
   date: string;
 }

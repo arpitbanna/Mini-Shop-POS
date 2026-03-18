@@ -83,7 +83,7 @@ export default function AddSale() {
         itemId: formData.itemId,
         sellPrice: sellPriceNum,
         quantity: quantityNum,
-        roomNo: Number(formData.roomNo),
+        roomNo: formData.roomNo.trim(),
         amountPaid: Number(formData.amountPaid || 0),
         date: new Date(formData.date).toISOString()
       },

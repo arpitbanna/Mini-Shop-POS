@@ -287,7 +287,9 @@ export default function Dashboard() {
                       </td>
                       <td className="py-4">
                         <div className="font-medium text-white">{sale.itemName} <span className="text-muted text-xs ml-1 bg-white/10 px-1.5 py-0.5 rounded">x{sale.quantity}</span></div>
-                        <div className="text-xs text-primary/80 mt-1 font-medium">Room {sale.roomNo}</div>
+                        <div className="text-xs text-primary/80 mt-1 font-medium">
+                          {sale.roomNo ? (sale.roomNo.match(/^\d+$/) ? `Room ${sale.roomNo}` : sale.roomNo) : '-'}
+                        </div>
                       </td>
                       <td className="py-4 font-bold text-blue-400">₹{sale.total}</td>
                       <td className="py-4 font-medium text-muted">₹{sale.amountPaid}</td>

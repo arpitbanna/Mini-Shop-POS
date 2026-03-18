@@ -24,9 +24,9 @@ const MOCK_INVENTORY: InventoryItem[] = [
 ];
 
 const MOCK_SALES: SaleItem[] = [
-  { id: 's1', itemId: '1', itemName: 'Maggi', date: new Date().toISOString(), sellPrice: 15, buyPrice: 10, quantity: 2, total: 30, profit: 10, roomNo: 101, amountPaid: 30, remaining: 0 },
-  { id: 's2', itemId: '2', itemName: 'Coke 250ml', date: new Date().toISOString(), sellPrice: 20, buyPrice: 15, quantity: 1, total: 20, profit: 5, roomNo: 102, amountPaid: 10, remaining: 10 },
-  { id: 's3', itemId: '3', itemName: 'Lays Magic Masala', date: new Date().toISOString(), sellPrice: 10, buyPrice: 8, quantity: 5, total: 50, profit: 10, roomNo: 204, amountPaid: 0, remaining: 50 },
+  { id: 's1', itemId: '1', itemName: 'Maggi', date: new Date().toISOString(), sellPrice: 15, buyPrice: 10, quantity: 2, total: 30, profit: 10, roomNo: '101', amountPaid: 30, remaining: 0 },
+  { id: 's2', itemId: '2', itemName: 'Coke 250ml', date: new Date().toISOString(), sellPrice: 20, buyPrice: 15, quantity: 1, total: 20, profit: 5, roomNo: '102', amountPaid: 10, remaining: 10 },
+  { id: 's3', itemId: '3', itemName: 'Lays Magic Masala', date: new Date().toISOString(), sellPrice: 10, buyPrice: 8, quantity: 5, total: 50, profit: 10, roomNo: '204', amountPaid: 0, remaining: 50 },
 ];
 
 const MOCK_PURCHASES: PurchaseItem[] = [
