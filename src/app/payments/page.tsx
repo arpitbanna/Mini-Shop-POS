@@ -143,7 +143,7 @@ export default function Payments() {
                    <tr key={sale.id} className="group hover:bg-white/[0.02] transition-all duration-200">
                      <td className="py-4 text-xs text-muted">{formatDateTime(sale.date)}</td>
                      <td className="py-4 font-medium text-white">{sale.itemName} <span className="text-muted text-xs bg-white/10 px-1.5 py-0.5 rounded ml-1">x{sale.quantity}</span></td>
-                     <td className="py-4 text-primary/80 text-xs">{sale.roomNo ? `Room ${sale.roomNo}` : '-'}</td>
+                     <td className="py-4 text-primary/80 text-xs">{sale.roomNo ? (sale.roomNo.match(/^\d+$/) ? `Room ${sale.roomNo}` : sale.roomNo) : '-'}</td>
                      <td className="py-4 font-semibold text-blue-400">₹{sale.total}</td>
                      <td className="py-4 font-medium text-success">₹{sale.amountPaid}</td>
                      <td className="py-4 font-bold text-red-400">₹{Math.max(0, sale.remaining)}</td>
@@ -178,9 +178,9 @@ export default function Payments() {
 
       {paymentModalData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="glass-panel max-w-sm w-full p-6 flex flex-col relative shadow-2xl border-primary/20 scale-in-center">
+          <div className="glass-panel max-w-md w-full p-8 flex flex-col relative shadow-2xl border border-primary/20 scale-in-center rounded-2xl">
             <div className="flex-between mb-4 border-b border-white/10 pb-3">
-              <h2 className="text-xl font-bold mb-0">Update Payment</h2>
+              <h2 className="text-lg font-bold mb-0">Update Payment</h2>
               <button onClick={() => setPaymentModalData(null)} className="text-muted hover:text-white transition-colors"><X size={20}/></button>
             </div>
             
@@ -190,28 +190,28 @@ export default function Payments() {
               <div className="flex-between"><span className="text-muted">Current Paid:</span> <span className="font-semibold text-success">₹{paymentModalData.amountPaid}</span></div>
             </div>
 
-            <form onSubmit={handlePaymentSubmit}>
+            <form onSubmit={handlePaymentSubmit} className="space-y-6">
               <div className="mb-6">
-                <label className="text-sm text-muted mb-2 block">New Total Amount Paid (₹)</label>
+                <label className="text-sm text-muted mb-3 block font-medium">New Total Amount Paid (₹)</label>
                 <div className="relative">
-                  <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                  <DollarSign size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
                   <input 
                     type="number" 
                     step="0.01" min={0}
                     value={newAmountPaid} 
                     onChange={(e) => setNewAmountPaid(Number(e.target.value))} 
-                    className="input-glass pl-9 font-bold text-lg"
+                    className="input-glass pl-12 font-bold text-lg w-full py-3"
                     required
                   />
                 </div>
-                <div className="flex gap-2 mt-3">
-                  <button type="button" onClick={() => setNewAmountPaid(paymentModalData.total)} className="flex-1 bg-success/10 text-success py-1.5 rounded border border-success/30 text-xs font-bold hover:bg-success/20">Full Settle (₹{paymentModalData.total})</button>
-                </div>
+                <button type="button" onClick={() => setNewAmountPaid(paymentModalData.total)} className="w-full bg-success/10 text-success py-2 mt-3 rounded-lg border border-success/30 text-sm font-bold hover:bg-success/20 transition-colors">
+                  Full Settle (₹{paymentModalData.total})
+                </button>
               </div>
 
-              <div className="flex gap-3 justify-end pt-4 border-t border-white/10">
-                <button type="button" onClick={() => setPaymentModalData(null)} className="btn btn-outline py-2 px-4 text-sm" disabled={updatePayment.isPending}>Cancel</button>
-                <button type="submit" disabled={updatePayment.isPending} className="btn py-2 px-6 text-sm flex items-center gap-2">
+              <div className="flex gap-3 justify-center pt-6 border-t border-white/10">
+                <button type="button" onClick={() => setPaymentModalData(null)} className="btn btn-outline py-2 px-6 text-sm" disabled={updatePayment.isPending}>Cancel</button>
+                <button type="submit" disabled={updatePayment.isPending} className="btn py-2 px-8 text-sm flex items-center gap-2">
                   {updatePayment.isPending ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />} 
                   Update
                 </button>

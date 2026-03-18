@@ -19,7 +19,7 @@ export interface SaleItem {
   quantity: number;
   total: number;
   profit: number;
-  roomNo: number;
+  roomNo: string;
   amountPaid: number;
   remaining: number;
 }

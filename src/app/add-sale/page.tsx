@@ -120,10 +120,10 @@ export default function AddSale() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto pb-12">
-      <h1 className="mb-6 text-xl font-semibold tracking-tight">Record a Sale</h1>
+    <div className="max-w-6xl mx-auto pb-12 px-4">
+      <h1 className="mb-6 text-xl font-semibold tracking-tight text-center">Record a Sale</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative">
         <div className="glass-panel relative overflow-hidden group border-white/10 hover:border-white/20 transition-all duration-200">
           <div className="absolute -left-20 -top-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none group-hover:bg-primary/10 transition-colors"></div>
           
@@ -189,12 +189,12 @@ export default function AddSale() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="roomNo" className="text-sm text-gray-400 mb-2 block">Room No (Optional)</label>
+                <label htmlFor="roomNo" className="text-sm text-gray-400 mb-2 block">Room No/Name (Optional)</label>
                 <input 
                   id="roomNo"
                   name="roomNo" 
-                  type="number" 
-                  placeholder="e.g. 306"
+                  type="text" 
+                  placeholder="e.g. 306 or Room A"
                   value={formData.roomNo}
                   onChange={handleChange}
                   className={fieldClass}

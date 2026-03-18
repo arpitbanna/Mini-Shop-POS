@@ -9,6 +9,7 @@ import {
   getRelationFirstId,
   getRollupNumberProperty,
   getTitleProperty,
+  getTextProperty,
 } from '@/lib/notion-helpers';
 import { calculateSaleTotals } from '@/lib/calculations';
 
@@ -58,7 +59,7 @@ export async function GET() {
           quantity,
           total,
           profit,
-          roomNo: getNumberProperty(page.properties, 'Room No', 0),
+          roomNo: getTextProperty(page.properties, 'Room No', ''),
           amountPaid,
           remaining,
         };

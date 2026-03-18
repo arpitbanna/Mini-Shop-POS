@@ -61,15 +61,16 @@ export default function AddStock() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto pb-12">
-      <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => router.back()} className="p-2 hover:bg-white/10 rounded-full transition-colors text-muted hover:text-white">
+    <div className="w-full flex justify-center pb-12 px-4">
+      <div className="w-full max-w-2xl">
+        <div className="relative flex items-center justify-center mb-8">
+          <button onClick={() => router.back()} className="absolute left-0 p-2 hover:bg-white/10 rounded-full transition-colors text-muted hover:text-white">
           <ArrowLeft size={24} />
         </button>
-        <h1 className="mb-0 text-xl font-semibold tracking-tight">Add New Stock</h1>
-      </div>
-      
-      <div className="glass-panel p-8 relative overflow-hidden group transition-all duration-200">
+          <h1 className="mb-0 text-2xl font-semibold tracking-tight text-center">Add New Stock</h1>
+        </div>
+        
+      <div className="glass-panel p-8 relative overflow-hidden group transition-all duration-200 rounded-2xl">
         <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none group-hover:bg-primary/20 transition-colors"></div>
 
         <form onSubmit={handleSubmit} className="relative z-10 space-y-6">
@@ -165,6 +166,7 @@ export default function AddStock() {
             </button>
           </div>
         </form>
+      </div>
       </div>
     </div>
   );

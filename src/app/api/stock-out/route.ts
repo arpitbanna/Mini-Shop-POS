@@ -13,7 +13,7 @@ export async function POST(request: Request) {
         Item: { relation: [{ id: itemId }] },
         'Sell Price': { number: Number(sellPrice) },
         Quantity: { number: Number(quantity) },
-        'Room No': { number: Number(roomNo) },
+        'Room No': { rich_text: roomNo ? [{ text: { content: String(roomNo) } }] : [] },
         'Amount Paid': { number: Number(amountPaid) },
         Date: { date: { start: date } },
       },

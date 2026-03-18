@@ -26,13 +26,17 @@ export function calculatePurseBalance(
 }
 
 export function sumRevenue(sales: SaleItem[]): number {
-  return sales.reduce((acc, sale) => acc + sale.total, 0);
+  return sales.filter(sale => sale.remaining === 0).reduce((acc, sale) => acc + sale.total, 0);
 }
 
 export function sumProfit(sales: SaleItem[]): number {
-  return sales.reduce((acc, sale) => acc + sale.profit, 0);
+  return sales.filter(sale => sale.remaining === 0).reduce((acc, sale) => acc + sale.profit, 0);
 }
 
 export function sumPendingAmount(sales: SaleItem[]): number {
   return sales.reduce((acc, sale) => acc + Math.max(0, sale.remaining), 0);
+}
+
+export function sumAmountReceived(sales: SaleItem[]): number {
+  return sales.reduce((acc, sale) => acc + sale.amountPaid, 0);
 }

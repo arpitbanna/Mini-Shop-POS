@@ -11,6 +11,7 @@ import {
   sumPendingAmount,
   sumProfit,
   sumRevenue,
+  sumAmountReceived,
 } from '@/lib/calculations';
 
 function DashboardSkeleton() {
@@ -46,7 +47,8 @@ export default function Dashboard() {
     const totalItemsSold = sales.reduce((acc, sale) => acc + sale.quantity, 0);
     const totalPurchase = purchases.reduce((acc, p) => acc + p.amount, 0);
     const extraExpenses = expenses.reduce((acc, e) => acc + e.amount, 0);
-    const purseBalance = calculatePurseBalance(totalRevenue, totalPurchase, extraExpenses);
+    const amountReceived = sumAmountReceived(sales);
+    const purseBalance = calculatePurseBalance(amountReceived, totalPurchase, extraExpenses);
 
     const today = new Date();
     const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0).getTime();

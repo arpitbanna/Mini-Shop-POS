@@ -37,6 +37,15 @@ export function getNumberProperty(properties: unknown, propertyName: string, fal
   return typeof value === 'number' ? value : fallback;
 }
 
+export function getTextProperty(properties: unknown, propertyName: string, fallback = ''): string {
+  const propsRecord = asRecord(properties);
+  const prop = getNestedRecord(propsRecord, propertyName);
+  const richText = getNestedArray(prop, 'rich_text');
+  const first = asRecord(richText[0]);
+  const plainText = first?.plain_text;
+  return typeof plainText === 'string' ? plainText : fallback;
+}
+
 export function getDateStartProperty(properties: unknown, propertyName: string, fallback = ''): string {
   const propsRecord = asRecord(properties);
   const prop = getNestedRecord(propsRecord, propertyName);
