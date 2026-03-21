@@ -126,3 +126,37 @@ export async function queryAllDatabasePages(
   }
   return { results };
 }
+
+export function getFullTextProperty(properties: unknown, propertyName: string, fallback = ''): string {
+  const propsRecord = asRecord(properties);
+  const prop = getNestedRecord(propsRecord, propertyName);
+  const richText = getNestedArray(prop, 'rich_text');
+  
+  if (!richText || richText.length === 0) return fallback;
+  
+  return richText
+    .map((rt) => {
+      const record = asRecord(rt);
+      return typeof record?.plain_text === 'string' ? record.plain_text : '';
+    })
+    .join('');
+}
+
+export function createRichTextChunks(text: string): { text: { content: string } }[] {
+  if (!text) return [{ text: { content: '' } }];
+  
+  const chunks: { text: { content: string } }[] = [];
+  const limit = 2000;
+  let currentIndex = 0;
+  
+  while (currentIndex < text.length) {
+    chunks.push({
+      text: {
+        content: text.substring(currentIndex, currentIndex + limit),
+      },
+    });
+    currentIndex += limit;
+  }
+  
+  return chunks;
+}

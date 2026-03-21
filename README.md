@@ -7,6 +7,7 @@ The UI was precision-engineered with a mobile-first philosophy capturing high-en
 ## 🚀 Key Features
 - **Centralized Ledger Tracking**: Effortlessly monitor overlapping entity tables capturing `Sales`, `Stock Ins`, `Purchases`, and `Expenses` across a strictly chronologically-sorted History boundary.
 - **Paginated Sales & Analysis**: Scalable loading arrays preventing system degradation globally incorporating Real-Time tracking bounds for daily, weekly, and monthly revenues.
+- **Notion-powered Notes Engine**: Built-in full rich text editor featuring native TipTap bolding, italics, and heading formats persisted instantly back to Notion Database grids.
 - **Notion Sync Capabilities**: Seamless real-time data ingestion mapped entirely using strict internal wrapper constraints locking data via `<ApiSuccessResponse>`.
 - **Global Skeletons Phase**: Native, lightning-fast gradient `.skeleton` renderings mirroring exact table layouts mapped globally replacing rudimentary loading spinners.
 

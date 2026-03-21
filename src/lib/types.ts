@@ -10,4 +10,5 @@ export type {
   InventoryUpdatePayload,
   ApiSuccessResponse,
   ApiErrorResponse,
+  NoteItem,
 } from '@/types';

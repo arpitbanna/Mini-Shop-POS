@@ -98,3 +98,11 @@ export interface ApiSuccessResponse {
 export interface ApiErrorResponse {
   error: string;
 }
+
+export interface NoteItem {
+  id: string;
+  title: string;
+  content: string; // Stored as HTML string
+  createdAt: string;
+  updatedAt: string;
+}

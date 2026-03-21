@@ -1,7 +1,7 @@
 'use client';
 
 import { useSales, useInventory, usePurchases, useExpenses } from '@/hooks/useApi';
-import { Activity, IndianRupee, TrendingUp, Package, ShoppingCart, Receipt, Wallet, AlertCircle } from 'lucide-react';
+import { Activity, IndianRupee, TrendingUp, Package, ShoppingCart, Receipt, Wallet, AlertCircle, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { formatDateTime } from '@/lib/utils';
 import { useMemo } from 'react';
@@ -114,6 +114,9 @@ export default function Dashboard() {
       <div className={styles.header}>
         <h1 className={styles.title}>Dashboard Overview</h1>
         <div className={styles.headerActions}>
+          <Link href="/notes" className={styles.btnOutline}>
+            <FileText size={16} /> Notes
+          </Link>
           <Link href="/add-purchase" className={styles.btnOutline}>
             <ShoppingCart size={16} /> Add Purchase
           </Link>

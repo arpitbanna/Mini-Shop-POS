@@ -17,3 +17,4 @@ export const STOCK_IN_DB_ID = getRequiredEnv('NOTION_STOCK_IN_DB_ID');
 export const STOCK_OUT_DB_ID = getRequiredEnv('NOTION_STOCK_OUT_DB_ID');
 export const PURCHASES_DB_ID = getRequiredEnv('NOTION_PURCHASES_DB_ID');
 export const EXPENSES_DB_ID = getRequiredEnv('NOTION_EXPENSES_DB_ID');
+export const NOTES_DB_ID = getRequiredEnv('NOTION_NOTES_DB_ID');
