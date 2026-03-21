@@ -4,7 +4,12 @@ import { Client } from '@notionhq/client';
 function getRequiredEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
+    if (process.env.NODE_ENV !== 'production' || process.env.NEXT_PHASE === 'phase-production-build' || process.env.npm_lifecycle_event === 'build') {
+      console.warn(`⚠️ Warning: Missing environment variable: ${name} (Build will continue, but API will fail at runtime)`);
+      return '';
+    }
+    console.error(`ERROR: Missing required environment variable: ${name}`);
+    return '';
   }
   return value;
 }
