@@ -77,10 +77,14 @@ const MOCK_EXPENSES: ExpenseItem[] = [
 async function fetcher<T>(url: string): Promise<T> {
   const res = await fetch(url);
   if (!res.ok) {
-    const errorBody = (await res.json().catch(() => null)) as ApiErrorResponse | null;
-    throw new Error(errorBody?.error || 'Request failed');
+    const errorBody = (await res.json().catch(() => null));
+    throw new Error(errorBody?.message || errorBody?.error || 'Request failed');
   }
-  return (await res.json()) as T;
+  const json = await res.json();
+  if (json.success !== undefined && json.data !== undefined) {
+    return json.data as T;
+  }
+  return json as T;
 }
 
 export function useSales() {
@@ -90,6 +94,36 @@ export function useSales() {
   return useQuery<SaleItem[]>({
     queryKey: [...queryKeys.sales.all, mode],
     queryFn: () => (isGuest ? Promise.resolve(MOCK_SALES) : fetcher<SaleItem[]>('/api/sales')),
+    staleTime: queryConfig.staleTimeMs,
+    refetchOnWindowFocus: queryConfig.refetchOnWindowFocus,
+  });
+}
+
+export interface PaginatedSalesResponse {
+  data: SaleItem[];
+  total: number;
+  page: number;
+  totalPages: number;
+  totals: {
+    totalBill: number;
+    totalProfit: number;
+    outstanding: number;
+  };
+}
+
+export function usePaginatedSales(page: number, limit: number, filter: string, dateFilter: string) {
+  const { isGuest } = useAuthStore();
+  const mode = isGuest ? 'guest' : 'live';
+
+  return useQuery<PaginatedSalesResponse>({
+    queryKey: [...queryKeys.sales.all, mode, 'paginated', page, limit, filter, dateFilter],
+    queryFn: async () => {
+      if (isGuest) {
+        const totals = { totalBill: 0, totalProfit: 0, outstanding: 0 };
+        return { data: MOCK_SALES, total: MOCK_SALES.length, page: 1, totalPages: 1, totals };
+      }
+      return fetcher<PaginatedSalesResponse>(`/api/sales?page=${page}&limit=${limit}&filter=${filter}&dateFilter=${dateFilter}`);
+    },
     staleTime: queryConfig.staleTimeMs,
     refetchOnWindowFocus: queryConfig.refetchOnWindowFocus,
   });
@@ -131,6 +165,32 @@ export function useExpenses() {
   });
 }
 
+export interface HistoryItem {
+  id: string;
+  type: 'Stock In' | 'Sale' | 'Purchase' | 'Expense';
+  title: string;
+  amount: number;
+  date: string;
+  extraInfo: string;
+}
+
+export function useHistory() {
+  const { isGuest } = useAuthStore();
+  const mode = isGuest ? 'guest' : 'live';
+
+  return useQuery<HistoryItem[]>({
+    queryKey: ['history', mode],
+    queryFn: async () => {
+      if (isGuest) {
+        return Promise.resolve([]);
+      }
+      return fetcher<HistoryItem[]>('/api/history');
+    },
+    staleTime: queryConfig.staleTimeMs,
+    refetchOnWindowFocus: queryConfig.refetchOnWindowFocus,
+  });
+}
+
 export function useAddSale() {
   const { isGuest } = useAuthStore();
   const queryClient = useQueryClient();
@@ -147,8 +207,8 @@ export function useAddSale() {
         body: JSON.stringify(saleData),
       });
       if (!res.ok) {
-        const errorBody = (await res.json().catch(() => null)) as ApiErrorResponse | null;
-        throw new Error(errorBody?.error || 'Failed to add sale');
+        const errorBody = (await res.json().catch(() => null));
+        throw new Error(errorBody?.message || errorBody?.error || 'Failed to add sale');
       }
       return (await res.json()) as ApiSuccessResponse;
     },
@@ -178,10 +238,11 @@ export function useUpdatePayment() {
         body: JSON.stringify({ id, amountPaid }),
       });
       if (!res.ok) {
-        const errorBody = (await res.json().catch(() => null)) as ApiErrorResponse | null;
-        throw new Error(errorBody?.error || 'Failed to update payment');
+        const errorBody = (await res.json().catch(() => null));
+        throw new Error(errorBody?.message || errorBody?.error || 'Failed to update payment');
       }
-      return (await res.json()) as ApiSuccessResponse;
+      const json = await res.json();
+      return (json.data || json) as ApiSuccessResponse;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.sales.all });
@@ -208,10 +269,11 @@ export function useAddExpense() {
         body: JSON.stringify(data),
       });
       if (!res.ok) {
-        const errorBody = (await res.json().catch(() => null)) as ApiErrorResponse | null;
-        throw new Error(errorBody?.error || 'Failed to add expense');
+        const errorBody = (await res.json().catch(() => null));
+        throw new Error(errorBody?.message || errorBody?.error || 'Failed to add expense');
       }
-      return (await res.json()) as ApiSuccessResponse;
+      const json = await res.json();
+      return (json.data || json) as ApiSuccessResponse;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all }),
     onError: (error: unknown) => {
@@ -236,10 +298,11 @@ export function useAddPurchase() {
         body: JSON.stringify(data),
       });
       if (!res.ok) {
-        const errorBody = (await res.json().catch(() => null)) as ApiErrorResponse | null;
-        throw new Error(errorBody?.error || 'Failed to add purchase');
+        const errorBody = (await res.json().catch(() => null));
+        throw new Error(errorBody?.message || errorBody?.error || 'Failed to add purchase');
       }
-      return (await res.json()) as ApiSuccessResponse;
+      const json = await res.json();
+      return (json.data || json) as ApiSuccessResponse;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.purchases.all }),
     onError: (error: unknown) => {
@@ -264,10 +327,11 @@ export function useAddInventory() {
         body: JSON.stringify(data),
       });
       if (!res.ok) {
-        const errorBody = (await res.json().catch(() => null)) as ApiErrorResponse | null;
-        throw new Error(errorBody?.error || 'Failed to add inventory');
+        const errorBody = (await res.json().catch(() => null));
+        throw new Error(errorBody?.message || errorBody?.error || 'Failed to add inventory');
       }
-      return (await res.json()) as ApiSuccessResponse;
+      const json = await res.json();
+      return (json.data || json) as ApiSuccessResponse;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all }),
     onError: (error: unknown) => {
@@ -292,10 +356,11 @@ export function useUpdateInventory() {
         body: JSON.stringify(data),
       });
       if (!res.ok) {
-        const errorBody = (await res.json().catch(() => null)) as ApiErrorResponse | null;
-        throw new Error(errorBody?.error || 'Failed to update inventory');
+        const errorBody = (await res.json().catch(() => null));
+        throw new Error(errorBody?.message || errorBody?.error || 'Failed to update inventory');
       }
-      return (await res.json()) as ApiSuccessResponse;
+      const json = await res.json();
+      return (json.data || json) as ApiSuccessResponse;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all }),
     onError: (error: unknown) => {
@@ -316,10 +381,11 @@ export function useDeleteInventory() {
       }
       const res = await fetch(`/api/inventory?id=${id}`, { method: 'DELETE' });
       if (!res.ok) {
-        const errorBody = (await res.json().catch(() => null)) as ApiErrorResponse | null;
-        throw new Error(errorBody?.error || 'Failed to delete item');
+        const errorBody = (await res.json().catch(() => null));
+        throw new Error(errorBody?.message || errorBody?.error || 'Failed to delete item');
       }
-      return (await res.json()) as ApiSuccessResponse;
+      const json = await res.json();
+      return (json.data || json) as ApiSuccessResponse;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all }),
     onError: (error: unknown) => {
@@ -340,10 +406,11 @@ export function useDeleteOutOfStockInventory() {
       }
       const res = await fetch('/api/inventory?mode=out-of-stock', { method: 'DELETE' });
       if (!res.ok) {
-        const errorBody = (await res.json().catch(() => null)) as ApiErrorResponse | null;
-        throw new Error(errorBody?.error || 'Failed to delete out-of-stock items');
+        const errorBody = (await res.json().catch(() => null));
+        throw new Error(errorBody?.message || errorBody?.error || 'Failed to delete out-of-stock items');
       }
-      return (await res.json()) as ApiSuccessResponse & { deletedCount?: number };
+      const json = await res.json();
+      return (json.data ? { ...json, ...json.data } : json) as ApiSuccessResponse & { deletedCount?: number };
     },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: queryKeys.inventory.all });

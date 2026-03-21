@@ -11,8 +11,9 @@ import {
   getRollupNumberProperty,
   getTitleProperty,
   getTextProperty,
+  queryAllDatabasePages,
 } from '@/lib/notion-helpers';
-import { getBusinessDate } from '@/lib/business-day';
+import { getBusinessDate, getBusinessDateRange } from '@/lib/business-day';
 
 type SerializedSaleItem = {
   productId: string;
@@ -103,7 +104,7 @@ function getDateOrTextPropertyByKey(properties: unknown, key: string, type: Noti
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const stockOutDb = await notion.databases.retrieve({ database_id: STOCK_OUT_DB_ID });
     const stockOutDbProperties = getDbProperties(stockOutDb);
@@ -118,11 +119,11 @@ export async function GET() {
     const buyPriceKey = findPropertyKey(stockOutDbProperties, ['Buy Price', 'Cost Price'], ['rollup', 'number'], false);
     const roomNoKey = findPropertyKey(stockOutDbProperties, ['Room No', 'Room', 'Room Number'], ['rich_text', 'title'], false);
 
-    const stockOutRes = await notion.databases.query({
+    const stockOutRes = await queryAllDatabasePages(notion, {
       database_id: STOCK_OUT_DB_ID,
     });
     
-    const stockInRes = await notion.databases.query({
+    const stockInRes = await queryAllDatabasePages(notion, {
       database_id: STOCK_IN_DB_ID,
     });
 
@@ -217,8 +218,65 @@ export async function GET() {
       })
       .filter((sale): sale is SaleItem => sale !== null);
 
-    return NextResponse.json(sales);
+    const { searchParams } = new URL(request.url);
+    const pageParam = searchParams.get('page');
+    const limitParam = searchParams.get('limit');
+    const filterParam = searchParams.get('filter') || 'all';
+    const dateFilterParam = searchParams.get('dateFilter') || 'all';
+
+    if (pageParam && limitParam) {
+      const page = parseInt(pageParam, 10) || 1;
+      const limit = parseInt(limitParam, 10) || 50;
+      
+      const sortedSales = [...sales].sort((a, b) => {
+        const businessDateSort = b.businessDate.localeCompare(a.businessDate);
+        if (businessDateSort !== 0) return businessDateSort;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+
+      const filteredSales = sortedSales.filter((sale) => {
+        let statusMatch = true;
+        if (filterParam === 'paid') statusMatch = sale.remaining <= 0;
+        else if (filterParam === 'partial') statusMatch = sale.remaining > 0 && sale.amountPaid > 0;
+        else if (filterParam === 'unpaid') statusMatch = sale.amountPaid <= 0;
+        
+        let dateMatch = true;
+        if (dateFilterParam !== 'all') {
+          const todayBusinessDate = getBusinessDate();
+          if (dateFilterParam === 'today') {
+            dateMatch = sale.businessDate === todayBusinessDate;
+          } else {
+            const days = dateFilterParam === 'week' ? 7 : 30;
+            const allowed = new Set(getBusinessDateRange(days));
+            dateMatch = allowed.has(sale.businessDate);
+          }
+        }
+        return statusMatch && dateMatch;
+      });
+
+      const totals = {
+        totalBill: filteredSales.reduce((sum, sale) => sum + sale.totalAmount, 0),
+        totalProfit: filteredSales.reduce((sum, sale) => sum + sale.profit, 0),
+        outstanding: filteredSales.reduce((sum, sale) => sum + Math.max(0, sale.remaining), 0)
+      };
+
+      const skip = (page - 1) * limit;
+      const paginatedData = filteredSales.slice(skip, skip + limit);
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          data: paginatedData,
+          total: filteredSales.length,
+          page,
+          totalPages: Math.ceil(filteredSales.length / limit),
+          totals
+        }
+      });
+    }
+
+    return NextResponse.json({ success: true, data: sales });
   } catch (error: unknown) {
-    return NextResponse.json({ error: getErrorMessage(error, 'Unable to fetch sales data') }, { status: 500 });
+    return NextResponse.json({ success: false, message: getErrorMessage(error, 'Unable to fetch sales data') }, { status: 500 });
   }
 }

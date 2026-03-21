@@ -1,3 +1,5 @@
+import { Client } from '@notionhq/client';
+
 type UnknownRecord = Record<string, unknown>;
 
 function asRecord(value: unknown): UnknownRecord | undefined {
@@ -103,4 +105,24 @@ export function asNotionResult(value: unknown): NotionResultLike | null {
     created_time,
     properties: record.properties,
   };
+}
+
+export async function queryAllDatabasePages(
+  notionClient: Client,
+  params: Parameters<Client['databases']['query']>[0]
+) {
+  const results: Record<string, unknown>[] = [];
+  let hasMore = true;
+  let nextCursor: string | undefined = undefined;
+
+  while (hasMore) {
+    const response = await notionClient.databases.query({
+      ...params,
+      start_cursor: nextCursor,
+    });
+    results.push(...response.results);
+    hasMore = response.has_more;
+    nextCursor = response.next_cursor ?? undefined;
+  }
+  return { results };
 }

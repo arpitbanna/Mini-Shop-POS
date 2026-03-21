@@ -3,7 +3,8 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useInventory, useAddInventory } from '@/hooks/useApi';
-import { Save, Loader2, ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { Save, Loader2, Plus, Trash2, ArrowLeft, Box, IndianRupee, Hash, PackageOpen, Calendar } from 'lucide-react';
+import styles from '@/styles/form.module.css';
 import { getLocalDatetimeStr } from '@/lib/utils';
 import { getBusinessDate } from '@/lib/business-day';
 import { toast } from 'sonner';
@@ -123,154 +124,173 @@ export default function AddStock() {
   };
 
   return (
-    <div className="flex w-full justify-center px-4 pb-14 pt-2">
-      <div className="w-full max-w-[980px]">
-        <div className="relative mb-10 flex items-center justify-center">
-          <button
-            onClick={() => router.back()}
-            className="absolute left-0 rounded-full p-2 text-muted transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <ArrowLeft size={24} />
-          </button>
-          <h1 className="mb-0 text-center text-4xl font-bold tracking-tight text-white md:text-5xl">Add New Stock</h1>
-        </div>
+    <div className={styles.pageContainer}>
+      <div className={styles.headerContext} style={{ marginBottom: '40px' }}>
+        <button
+          onClick={() => router.back()}
+          className={styles.backBtn}
+        >
+          <ArrowLeft size={24} />
+        </button>
+        <h1 className={styles.pageTitle} style={{ marginBottom: 0 }}>Add New Stock</h1>
+      </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="glass-panel rounded-2xl border border-white/20 bg-gradient-to-b from-white/[0.08] via-white/[0.04] to-white/[0.02] p-6 shadow-[0_14px_34px_-20px_rgba(0,0,0,0.85)] transition-all duration-200 hover:-translate-y-0.5">
-            <div className="space-y-5">
-              <div>
-                <label htmlFor="date" className="mb-2.5 block text-base font-semibold tracking-wide text-slate-300">Date & Time</label>
-                <input
-                  id="date"
-                  name="date"
-                  type="datetime-local"
-                  required
-                  value={entryMeta.date}
-                  onChange={(e) => setEntryMeta({ date: e.target.value })}
-                  className={fieldClass}
-                />
-                <p className="mt-2 text-sm text-slate-400">Business Date: {getBusinessDate(5, new Date(entryMeta.date))}</p>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="name" className="mb-2.5 block text-base font-semibold tracking-wide text-slate-300">Item Name</label>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    required
-                    list="inventory-suggestions"
-                    placeholder="e.g. Maggi"
-                    value={draft.name}
-                    onChange={handleDraftChange}
-                    className={fieldClass}
-                  />
-                  <datalist id="inventory-suggestions">
-                    {uniqueItems.map((item, idx) => (
-                      <option key={idx} value={item.name} />
-                    ))}
-                  </datalist>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <div>
-                    <label htmlFor="buyPrice" className="mb-2.5 block text-sm font-semibold tracking-wide text-slate-300">Buy Price (₹)</label>
-                    <input
-                      id="buyPrice"
-                      name="buyPrice"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={draft.buyPrice}
-                      onChange={handleDraftChange}
-                      className={fieldClass}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="sellPrice" className="mb-2.5 block text-sm font-semibold tracking-wide text-slate-300">Sell Price (₹)</label>
-                    <input
-                      id="sellPrice"
-                      name="sellPrice"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={draft.sellPrice}
-                      onChange={handleDraftChange}
-                      className={fieldClass}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="quantity" className="mb-2.5 block text-sm font-semibold tracking-wide text-slate-300">Qty</label>
-                    <input
-                      id="quantity"
-                      name="quantity"
-                      type="number"
-                      min="1"
-                      value={draft.quantity}
-                      onChange={handleDraftChange}
-                      className={fieldClass}
-                      placeholder="1"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={addItem}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-lime-400 px-5 py-3 text-lg font-semibold text-white shadow-[0_12px_26px_-14px_rgba(74,222,128,0.9)] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-105"
-                >
-                  <Plus size={20} /> Add Item
-                </button>
-              </div>
+      <div className={styles.gridContainer}>
+        <div className={styles.card}>
+          <div className={styles.inputGroup}>
+            <label htmlFor="date" className={styles.label}>Date & Time</label>
+            <div className={styles.inputWrapper}>
+              <Calendar size={16} className={styles.inputIcon} />
+              <input
+                id="date"
+                name="date"
+                type="datetime-local"
+                required
+                value={entryMeta.date}
+                onChange={(e) => setEntryMeta({ date: e.target.value })}
+                className={`${styles.input} ${styles.inputWithIcon}`}
+              />
             </div>
+            <p className="mt-1 text-xs text-white opacity-50 block mb-0 mt-2">Business Date: {getBusinessDate(5, new Date(entryMeta.date))}</p>
           </div>
 
-          <form onSubmit={submitStock} className="glass-panel flex flex-col rounded-2xl border border-white/20 bg-gradient-to-b from-white/[0.08] via-white/[0.04] to-white/[0.02] p-6 shadow-[0_14px_34px_-20px_rgba(0,0,0,0.85)] transition-all duration-200 hover:-translate-y-0.5">
-            <h2 className="mb-4 text-3xl font-semibold tracking-tight text-white md:text-4xl">Stock Entry Summary</h2>
-
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-              {items.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-white/20 bg-white/[0.02] px-4 py-3 text-center text-lg text-slate-300/80 md:text-xl">
-                  No stock items added yet
-                </div>
-              ) : (
-                items.map((item, idx) => (
-                  <div key={`${item.name}-${idx}`} className="flex-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                    <div>
-                      <div className="text-lg font-medium text-white">{item.name}</div>
-                      <div className="text-sm text-muted">Qty {item.quantity}, Buy ₹{item.buyPrice}, Sell ₹{item.sellPrice}</div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeItem(idx)}
-                      className="inline-flex items-center gap-1 text-sm text-danger hover:text-red-300"
-                    >
-                      <Trash2 size={16} /> Remove
-                    </button>
-                  </div>
-                ))
-              )}
+          <div className={styles.card} style={{ padding: '20px', background: 'rgba(255,255,255,0.015)', boxShadow: 'none' }}>
+            <div className={styles.inputGroup}>
+              <label htmlFor="name" className={styles.label}>Item Name</label>
+              <div className={styles.inputWrapper}>
+                <Box size={16} className={styles.inputIcon} />
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  required
+                  list="inventory-suggestions"
+                  placeholder="e.g. Maggi"
+                  value={draft.name}
+                  onChange={handleDraftChange}
+                  className={`${styles.input} ${styles.inputWithIcon}`}
+                />
+                <datalist id="inventory-suggestions">
+                  {uniqueItems.map((item, idx) => (
+                    <option key={idx} value={item.name} />
+                  ))}
+                </datalist>
+              </div>
             </div>
 
-            <div className="mt-5 space-y-2 border-t border-white/10 pt-4 text-base">
-              <div className="flex-between"><span className="text-muted">Total Items</span><span className="font-semibold text-white">{items.length}</span></div>
-              <div className="flex-between"><span className="text-muted">Total Quantity</span><span className="font-semibold text-white">{summary.totalQty}</span></div>
-              <div className="flex-between"><span className="text-muted">Estimated Sell Value</span><span className="font-semibold text-white">₹{summary.estimatedValue}</span></div>
+            <div className={styles.threeColumnGrid}>
+              <div className={styles.inputGroup}>
+                <label htmlFor="buyPrice" className={styles.label}>Buy Price</label>
+                <div className={styles.inputWrapper}>
+                  <IndianRupee size={16} className={styles.inputIcon} />
+                  <input
+                    id="buyPrice"
+                    name="buyPrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={draft.buyPrice}
+                    onChange={handleDraftChange}
+                    className={`${styles.input} ${styles.inputWithIcon}`}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              <div className={styles.inputGroup}>
+                <label htmlFor="sellPrice" className={styles.label}>Sell Price</label>
+                <div className={styles.inputWrapper}>
+                  <IndianRupee size={16} className={styles.inputIcon} />
+                  <input
+                    id="sellPrice"
+                    name="sellPrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={draft.sellPrice}
+                    onChange={handleDraftChange}
+                    className={`${styles.input} ${styles.inputWithIcon}`}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              <div className={styles.inputGroup}>
+                <label htmlFor="quantity" className={styles.label}>Qty</label>
+                <div className={styles.inputWrapper}>
+                  <Hash size={16} className={styles.inputIcon} />
+                  <input
+                    id="quantity"
+                    name="quantity"
+                    type="number"
+                    min="1"
+                    value={draft.quantity}
+                    onChange={handleDraftChange}
+                    className={`${styles.input} ${styles.inputWithIcon}`}
+                    placeholder="1"
+                  />
+                </div>
+              </div>
             </div>
 
             <button
-              type="submit"
-              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-lime-400 px-5 py-3 text-lg font-semibold text-white shadow-[0_12px_26px_-14px_rgba(74,222,128,0.9)] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={addInventory.isPending || items.length === 0}
+              type="button"
+              onClick={addItem}
+              className={styles.btnSecondary}
             >
-              {addInventory.isPending ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-              <span>{addInventory.isPending ? 'Saving...' : 'Save Stock Entry'}</span>
+              <Plus size={16} /> Add Item
             </button>
-          </form>
+          </div>
         </div>
+
+        <form onSubmit={submitStock} className={styles.card}>
+          <h2 className={styles.summaryHeader}>Stock Entry Summary</h2>
+
+          <div className={styles.summaryList}>
+            {items.length === 0 ? (
+              <div className={styles.emptyStateContainer}>
+                 <PackageOpen size={32} opacity={0.5}/>
+                 <span style={{ fontSize: '14px', fontWeight: 500 }}>No stock items added yet</span>
+              </div>
+            ) : (
+              items.map((item, idx) => (
+                <div key={`${item.name}-${idx}`} className={styles.summaryItem}>
+                  <div>
+                    <div className={styles.summaryItemTitle}>{item.name}</div>
+                    <div className={styles.summaryItemMeta}>Qty {item.quantity}, Buy ₹{item.buyPrice}, Sell ₹{item.sellPrice}</div>
+                  </div>
+                  <div className={styles.summaryItemRight}>
+                    <button type="button" onClick={() => removeItem(idx)} className={styles.removeBtn} style={{ marginTop: 0 }}>
+                      <Trash2 size={12} /> Remove
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className={styles.totalsSpacedBlock}>
+            <div className={styles.summaryRow}>
+               <span className={styles.summaryRowLabel}>Total Items</span>
+               <span className={styles.summaryRowValue}>{items.length}</span>
+            </div>
+            <div className={styles.summaryRow}>
+               <span className={styles.summaryRowLabel}>Total Quantity</span>
+               <span className={styles.summaryRowValue}>{summary.totalQty}</span>
+            </div>
+            <div className={styles.summaryRow}>
+               <span className={styles.summaryRowLabel}>Estimated Sell Value</span>
+               <span className={styles.summaryTotalAmount}>₹{summary.estimatedValue}</span>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={addInventory.isPending || items.length === 0}
+            className={styles.btnPrimary}
+          >
+            {addInventory.isPending ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+            <span>{addInventory.isPending ? 'Saving...' : 'Save Stock Entry'}</span>
+          </button>
+        </form>
       </div>
     </div>
   );

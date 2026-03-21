@@ -96,7 +96,7 @@ export async function POST(request: Request) {
     const { items, roomNo, amountPaid, createdAt, businessDate } = (await request.json()) as AddSalePayload;
 
     if (!Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: 'At least one item is required' }, { status: 400 });
+      return NextResponse.json({ success: false, message: 'At least one item is required' }, { status: 400 });
     }
 
     const db = await notion.databases.retrieve({ database_id: STOCK_OUT_DB_ID });
@@ -187,12 +187,12 @@ export async function POST(request: Request) {
         },
       });
 
-      return NextResponse.json({ success: true, id: response.id, mode: 'grouped-schema' });
+      return NextResponse.json({ success: true, data: { id: response.id }, message: 'Sale created successfully' });
     }
 
     if (!itemRelationKey) {
       return NextResponse.json(
-        { error: 'Required relation property for sold item is missing in stock-out database schema' },
+        { success: false, message: 'Required relation property for sold item is missing in stock-out database schema' },
         { status: 400 },
       );
     }
@@ -232,7 +232,7 @@ export async function POST(request: Request) {
         if (!relationId) {
           return NextResponse.json(
             {
-              error: `Unable to map item "${item.name}" to a stock record UUID. Select the item again from inventory list.`,
+              success: false, message: `Unable to map item "${item.name}" to a stock record UUID. Select the item again from inventory list.`,
             },
             { status: 400 },
           );
@@ -289,16 +289,16 @@ export async function POST(request: Request) {
         });
     }
 
-    return NextResponse.json({ success: true, mode: 'legacy-schema' });
+    return NextResponse.json({ success: true, message: 'Sale created via legacy mode successfully' });
   } catch (error: unknown) {
-    return NextResponse.json({ error: getErrorMessage(error, 'Unable to create sale') }, { status: 500 });
+    return NextResponse.json({ success: false, message: getErrorMessage(error, 'Unable to create sale') }, { status: 500 });
   }
 }
 
 export async function PUT(request: Request) {
   try {
     const { id, amountPaid } = (await request.json()) as UpdatePaymentPayload;
-    if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    if (!id) return NextResponse.json({ success: false, message: 'ID is required' }, { status: 400 });
 
     await notion.pages.update({
       page_id: id,
@@ -307,8 +307,8 @@ export async function PUT(request: Request) {
       },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'Payment updated gracefully' });
   } catch (error: unknown) {
-    return NextResponse.json({ error: getErrorMessage(error, 'Unable to update payment') }, { status: 500 });
+    return NextResponse.json({ success: false, message: getErrorMessage(error, 'Unable to update payment') }, { status: 500 });
   }
 }

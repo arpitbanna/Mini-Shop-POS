@@ -9,6 +9,7 @@ import {
   getNumberProperty,
   getRelationFirstId,
   getTitleProperty,
+  queryAllDatabasePages,
 } from '@/lib/notion-helpers';
 import { calculateAvailableQuantity } from '@/lib/calculations';
 import type { InventoryUpdatePayload } from '@/types';
@@ -38,11 +39,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const stockInRes = await notion.databases.query({
+    const stockInRes = await queryAllDatabasePages(notion, {
       database_id: STOCK_IN_DB_ID,
     });
     
-    const stockOutRes = await notion.databases.query({
+    const stockOutRes = await queryAllDatabasePages(notion, {
       database_id: STOCK_OUT_DB_ID,
     });
 
@@ -131,9 +132,9 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json(Array.from(inventoryMap.values()));
+    return NextResponse.json({ success: true, data: Array.from(inventoryMap.values()) });
   } catch (error: unknown) {
-    return NextResponse.json({ error: getErrorMessage(error, 'Unable to fetch inventory') }, { status: 500 });
+    return NextResponse.json({ success: false, message: getErrorMessage(error, 'Unable to fetch inventory') }, { status: 500 });
   }
 }
 
@@ -141,11 +142,11 @@ export async function PUT(request: Request) {
   try {
     const body = (await request.json()) as InventoryUpdatePayload;
     const { id, name, buyPrice, sellPrice, quantityIn } = body;
-    if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    if (!id) return NextResponse.json({ success: false, message: 'ID is required' }, { status: 400 });
 
     if (!isUuid(id)) {
       const targetKey = normalizeProductKey(id);
-      const stockInRes = await notion.databases.query({
+      const stockInRes = await queryAllDatabasePages(notion, {
         database_id: STOCK_IN_DB_ID,
       });
 
@@ -202,12 +203,12 @@ export async function PUT(request: Request) {
           },
         });
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, message: 'Inventory updated successfully' });
       }
 
       if (!legacyPageId) {
         return NextResponse.json(
-          { error: 'Item ID must be a valid UUID or an existing inventory item key' },
+          { success: false, message: 'Item ID must be a valid UUID or an existing inventory item key' },
           { status: 400 },
         );
       }
@@ -219,7 +220,7 @@ export async function PUT(request: Request) {
       if (quantityIn !== undefined) properties.Quantity = { number: Number(quantityIn) };
 
       await notion.pages.update({ page_id: legacyPageId, properties });
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ success: true, message: 'Inventory updated successfully' });
     }
 
     const properties: NonNullable<Parameters<typeof notion.pages.update>[0]['properties']> = {};
@@ -229,9 +230,9 @@ export async function PUT(request: Request) {
     if (quantityIn !== undefined) properties.Quantity = { number: Number(quantityIn) };
 
     await notion.pages.update({ page_id: id, properties });
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'Inventory updated successfully' });
   } catch (error: unknown) {
-    return NextResponse.json({ error: getErrorMessage(error, 'Unable to update inventory item') }, { status: 500 });
+    return NextResponse.json({ success: false, message: getErrorMessage(error, 'Unable to update inventory item') }, { status: 500 });
   }
 }
 
@@ -241,11 +242,11 @@ export async function DELETE(request: Request) {
     const mode = searchParams.get('mode');
     const id = searchParams.get('id');
 
-    const stockInRes = await notion.databases.query({
+    const stockInRes = await queryAllDatabasePages(notion, {
       database_id: STOCK_IN_DB_ID,
     });
 
-    const stockOutRes = await notion.databases.query({
+    const stockOutRes = await queryAllDatabasePages(notion, {
       database_id: STOCK_OUT_DB_ID,
     });
 
@@ -361,20 +362,20 @@ export async function DELETE(request: Request) {
         .map(([key]) => key);
 
       await removeKeysFromStockIn(new Set(outOfStockKeys));
-      return NextResponse.json({ success: true, deletedCount: outOfStockKeys.length });
+      return NextResponse.json({ success: true, data: { deletedCount: outOfStockKeys.length }, message: 'Deleted out of stock items' });
     }
 
-    if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    if (!id) return NextResponse.json({ success: false, message: 'ID is required' }, { status: 400 });
 
     const pageIdsToProcess = Array.from(new Set(stockInPagesByKey.get(id) || []));
     if (pageIdsToProcess.length === 0) {
-      return NextResponse.json({ error: 'Item not found' }, { status: 404 });
+      return NextResponse.json({ success: false, message: 'Item not found' }, { status: 404 });
     }
 
     await removeKeysFromStockIn(new Set([id]));
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'Inventory item deleted' });
   } catch (error: unknown) {
-    return NextResponse.json({ error: getErrorMessage(error, 'Unable to delete inventory item') }, { status: 500 });
+    return NextResponse.json({ success: false, message: getErrorMessage(error, 'Unable to delete inventory item') }, { status: 500 });
   }
 }

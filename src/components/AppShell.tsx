@@ -2,8 +2,9 @@
 
 import { useAuthStore } from '@/lib/store';
 import Link from 'next/link';
-import { Home, PackageSearch, PlusCircle, ShoppingCart, DollarSign, LogOut, BarChart3 } from 'lucide-react';
+import { Home, PackageSearch, PlusCircle, ShoppingCart, DollarSign, LogOut, BarChart3, History } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import styles from './app-shell.module.css';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { isAdmin, isGuest, logout } = useAuthStore();
@@ -16,22 +17,23 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     { href: '/add-stock', label: 'Stock In', icon: PlusCircle },
     { href: '/inventory', label: 'Inventory', icon: PackageSearch },
     { href: '/payments', label: 'Payments', icon: DollarSign },
+    { href: '/history', label: 'History', icon: History },
   ];
 
   if (!isAdmin && !isGuest && pathname === '/login') {
-    return <main className="container">{children}</main>;
+    return <main className={styles.mainContainer}>{children}</main>;
   }
 
   if (!isAdmin && !isGuest) return null;
 
   return (
     <>
-      <nav className="glass-nav z-40 relative">
-        <div className="nav-container">
-          <Link href="/" className="nav-brand">
+      <nav className={styles.glassNav}>
+        <div className={styles.navContainer}>
+          <Link href="/" className={styles.navBrand}>
             Mini Shop POS
           </Link>
-          <div className="nav-links">
+          <div className={styles.navLinks}>
             {navItems.map((item) => {
               const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
               const Icon = item.icon;
@@ -40,7 +42,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`nav-item ${isActive ? 'active' : ''}`}
+                  className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
                   aria-current={isActive ? 'page' : undefined}
                 >
                   <Icon size={16} />
@@ -50,7 +52,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             })}
             <button
               onClick={logout}
-              className="nav-item text-danger hover:text-danger cursor-pointer bg-transparent border-none"
+              className={`${styles.navItem} ${styles.navLogout}`}
             >
               <LogOut size={16} />
               <span>Logout</span>
@@ -59,14 +61,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </nav>
       {isGuest && (
-        <div className="relative z-40 w-full border-y border-amber-300/45 bg-gradient-to-r from-amber-300 via-yellow-300 to-amber-300 px-4 py-2.5 text-center text-sm font-extrabold tracking-wide text-slate-900 shadow-[0_10px_26px_-14px_rgba(251,191,36,0.95)]">
-          <div className="mx-auto flex max-w-6xl items-center justify-center gap-2.5">
-            <span className="flex h-2.5 w-2.5 animate-pulse rounded-full bg-slate-900"></span>
-            <span className="uppercase">Guest Mode (Demo Data) - Write actions are disabled</span>
+        <div className={styles.guestBanner}>
+          <div className={styles.guestBannerInner}>
+            <span className={styles.pulseDot}></span>
+            <span>GUEST MODE (DEMO DATA) - WRITE ACTIONS ARE DISABLED</span>
           </div>
         </div>
       )}
-      <main className="container pt-6">
+      <main className={styles.mainContainer}>
         {children}
       </main>
     </>

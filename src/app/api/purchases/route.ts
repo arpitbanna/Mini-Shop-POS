@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import { notion, PURCHASES_DB_ID } from '@/lib/notion';
 import { PurchaseItem } from '@/lib/types';
-import { asNotionResult, getDateStartProperty, getErrorMessage, getNumberProperty, getTitleProperty } from '@/lib/notion-helpers';
+import { asNotionResult, getDateStartProperty, getErrorMessage, getNumberProperty, getTitleProperty, queryAllDatabasePages } from '@/lib/notion-helpers';
 import type { AddNamedAmountPayload } from '@/types';
 
 export const revalidate = 0; // Disable caching
 
 export async function GET() {
   try {
-    const response = await notion.databases.query({
+    const response = await queryAllDatabasePages(notion, {
       database_id: PURCHASES_DB_ID,
       sorts: [
         {
@@ -32,9 +32,9 @@ export async function GET() {
       })
       .filter((purchase): purchase is PurchaseItem => purchase !== null);
 
-    return NextResponse.json(purchases);
+    return NextResponse.json({ success: true, data: purchases });
   } catch (error: unknown) {
-    return NextResponse.json({ error: getErrorMessage(error, 'Unable to fetch purchases') }, { status: 500 });
+    return NextResponse.json({ success: false, message: getErrorMessage(error, 'Unable to fetch purchases') }, { status: 500 });
   }
 }
 
@@ -61,8 +61,8 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ success: true, id: response.id });
+    return NextResponse.json({ success: true, data: { id: response.id }, message: 'Purchase created successfully' });
   } catch (error: unknown) {
-    return NextResponse.json({ error: getErrorMessage(error, 'Unable to create purchase') }, { status: 500 });
+    return NextResponse.json({ success: false, message: getErrorMessage(error, 'Unable to create purchase') }, { status: 500 });
   }
 }

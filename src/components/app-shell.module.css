@@ -1,0 +1,120 @@
+.glassNav {
+  background: rgba(7, 12, 18, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-soft);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 0 18px;
+}
+
+.navContainer {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 74px;
+  gap: 20px;
+}
+
+.navBrand {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  background: var(--accent-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 0;
+}
+
+.navItem {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background: transparent;
+}
+
+.navItem:hover, .navItemActive {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.navLogout {
+  color: var(--danger);
+}
+.navLogout:hover {
+  color: var(--danger);
+  background: rgba(255, 107, 107, 0.1);
+  border-color: rgba(255, 107, 107, 0.2);
+}
+
+.guestBanner {
+  position: relative;
+  z-index: 40;
+  width: 100%;
+  border-top: 1px solid rgba(255, 210, 77, 0.45);
+  border-bottom: 1px solid rgba(255, 210, 77, 0.45);
+  background: linear-gradient(90deg, #ffd24d, #ffe48a, #ffd24d);
+  padding: 10px 16px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #000;
+  box-shadow: 0 10px 26px -14px rgba(255, 210, 77, 0.95);
+}
+
+.guestBannerInner {
+  margin: 0 auto;
+  display: flex;
+  max-width: 1100px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.pulseDot {
+  display: flex;
+  height: 10px;
+  width: 10px;
+  border-radius: 50%;
+  background: #000;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.mainContainer {
+  margin: 0 auto;
+  max-width: 1100px;
+  padding: 24px 20px;
+}

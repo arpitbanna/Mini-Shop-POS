@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useInventory, useAddSale } from '@/hooks/useApi';
-import { Save, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Save, Loader2, Plus, Trash2, IndianRupee, User, Calendar, Box, PackageOpen } from 'lucide-react';
+import styles from '@/styles/form.module.css';
 import { getLocalDatetimeStr } from '@/lib/utils';
 import { getBusinessDate } from '@/lib/business-day';
 import { toast } from 'sonner';
@@ -32,6 +33,7 @@ export default function AddSale() {
   });
 
   const [items, setItems] = useState<SaleDraftItem[]>([]);
+  const [isManualPaid, setIsManualPaid] = useState(false);
 
   const fieldClass =
     'w-full bg-white/[0.045] border border-white/15 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-400/60 focus:bg-white/[0.08] focus:ring-2 focus:ring-teal-500/30 transition-all duration-200';
@@ -73,6 +75,16 @@ export default function AddSale() {
   const totalQty = itemRows.reduce((acc, row) => acc + row.quantity, 0);
   const amountPaid = Number(transaction.amountPaid || 0);
   const remaining = Math.max(0, totalAmount - amountPaid);
+
+  useEffect(() => {
+    if (!isManualPaid) {
+      if (totalAmount > 0) {
+        setTransaction((prev) => ({ ...prev, amountPaid: String(totalAmount) }));
+      } else if (totalAmount === 0) {
+        setTransaction((prev) => ({ ...prev, amountPaid: '' }));
+      }
+    }
+  }, [totalAmount, isManualPaid]);
 
   const usedQtyByProduct = useMemo(() => {
     const map = new Map<string, number>();
@@ -166,75 +178,88 @@ export default function AddSale() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto pb-12 px-4">
-      <h1 className="mb-6 text-xl font-semibold tracking-tight text-center">Record a Sale</h1>
+    <div className={styles.pageContainer}>
+      <h1 className={styles.pageTitle}>Record a Sale</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="glass-panel space-y-6 border-white/10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="roomNo" className="text-sm font-semibold text-slate-300 mb-2.5 block tracking-wide">Room No / Name</label>
-              <input
-                id="roomNo"
-                name="roomNo"
-                type="text"
-                value={transaction.roomNo}
-                onChange={(e) => setTransaction((prev) => ({ ...prev, roomNo: e.target.value }))}
-                className={fieldClass}
-                placeholder="e.g. 306 or Lobby"
-              />
+      <div className={styles.gridContainer}>
+        {/* Left Side: Input Form */}
+        <div className={styles.card}>
+          <div className={styles.twoColumnGrid}>
+            <div className={styles.inputGroup}>
+              <label htmlFor="roomNo" className={styles.label}>Room No / Name</label>
+              <div className={styles.inputWrapper}>
+                <User size={16} className={styles.inputIcon} />
+                <input
+                  id="roomNo"
+                  name="roomNo"
+                  type="text"
+                  value={transaction.roomNo}
+                  onChange={(e) => setTransaction((prev) => ({ ...prev, roomNo: e.target.value }))}
+                  className={`${styles.input} ${styles.inputWithIcon}`}
+                  placeholder="e.g. 306 or Lobby"
+                />
+              </div>
             </div>
-            <div>
-              <label htmlFor="date" className="text-sm font-semibold text-slate-300 mb-2.5 block tracking-wide">Date & Time</label>
-              <input
-                id="date"
-                name="date"
-                type="datetime-local"
-                required
-                value={transaction.date}
-                onChange={(e) => setTransaction((prev) => ({ ...prev, date: e.target.value }))}
-                className={fieldClass}
-              />
+            <div className={styles.inputGroup}>
+              <label htmlFor="date" className={styles.label}>Date & Time</label>
+              <div className={styles.inputWrapper}>
+                <Calendar size={16} className={styles.inputIcon} />
+                <input
+                  id="date"
+                  name="date"
+                  type="datetime-local"
+                  required
+                  value={transaction.date}
+                  onChange={(e) => setTransaction((prev) => ({ ...prev, date: e.target.value }))}
+                  className={`${styles.input} ${styles.inputWithIcon}`}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl border border-white/10 bg-white/[0.03] space-y-4">
-            <div>
-              <label htmlFor="productId" className="text-sm font-semibold text-slate-300 mb-2.5 block tracking-wide">Select Item</label>
-              <select
-                id="productId"
-                name="productId"
-                value={draftItem.productId}
-                onChange={handleDraftChange}
-                className={fieldClass}
-                disabled={invLoading}
-              >
-                <option value="">-- {invLoading ? 'Loading inventory...' : 'Select item'} --</option>
-                {availableInventory.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name} ({item.available} in stock)
-                  </option>
-                ))}
-              </select>
+          <div className={styles.card} style={{ padding: '20px', background: 'rgba(255,255,255,0.015)', boxShadow: 'none' }}>
+            <div className={styles.inputGroup}>
+              <label htmlFor="productId" className={styles.label}>Select Item</label>
+              <div className={styles.inputWrapper}>
+                <Box size={16} className={styles.inputIcon} />
+                <select
+                  id="productId"
+                  name="productId"
+                  value={draftItem.productId}
+                  onChange={handleDraftChange}
+                  className={`${styles.input} ${styles.inputWithIcon}`}
+                  disabled={invLoading}
+                >
+                  <option value="">-- {invLoading ? 'Loading inventory...' : 'Select item'} --</option>
+                  {availableInventory.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name} ({item.available} in stock)
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="sellingPrice" className="text-sm font-semibold text-slate-300 mb-2.5 block tracking-wide">Selling Price (₹)</label>
-                <input
-                  id="sellingPrice"
-                  name="sellingPrice"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={draftItem.sellingPrice}
-                  onChange={handleDraftChange}
-                  className={fieldClass}
-                  placeholder="0.00"
-                />
+            <div className={styles.twoColumnGrid}>
+              <div className={styles.inputGroup}>
+                <label htmlFor="sellingPrice" className={styles.label}>Selling Price</label>
+                <div className={styles.inputWrapper}>
+                  <IndianRupee size={16} className={styles.inputIcon} />
+                  <input
+                    id="sellingPrice"
+                    name="sellingPrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={draftItem.sellingPrice}
+                    onChange={handleDraftChange}
+                    className={`${styles.input} ${styles.inputWithIcon}`}
+                    placeholder="0.00"
+                  />
+                </div>
               </div>
-              <div>
-                <label htmlFor="quantity" className="text-sm font-semibold text-slate-300 mb-2.5 block tracking-wide">Quantity</label>
+              <div className={styles.inputGroup}>
+                <label htmlFor="quantity" className={styles.label}>Quantity</label>
                 <input
                   id="quantity"
                   name="quantity"
@@ -242,59 +267,67 @@ export default function AddSale() {
                   min="1"
                   value={draftItem.quantity}
                   onChange={handleDraftChange}
-                  className={fieldClass}
+                  className={styles.input}
                   placeholder="1"
                 />
               </div>
             </div>
 
             {selectedDraftInventory && (
-              <p className="text-xs text-success">Cost Price: ₹{selectedDraftInventory.buyPrice} per unit</p>
+              <p className="text-xs text-green-400 opacity-80 mt-[-10px]">Cost Price: ₹{selectedDraftInventory.buyPrice} per unit</p>
             )}
 
             <button
               type="button"
               onClick={addItem}
-              className="btn btn-outline w-full border-white/20 hover:bg-white/10"
+              className={styles.btnSecondary}
             >
               <Plus size={16} /> Add Item
             </button>
           </div>
 
-          <div>
-            <label htmlFor="amountPaid" className="text-sm font-semibold text-slate-300 mb-2.5 block tracking-wide">Amount Paid (₹)</label>
-            <input
-              id="amountPaid"
-              name="amountPaid"
-              type="number"
-              min="0"
-              step="0.01"
-              value={transaction.amountPaid}
-              onChange={(e) => setTransaction((prev) => ({ ...prev, amountPaid: e.target.value }))}
-              className={fieldClass}
-              placeholder="0.00"
-            />
+          <div className={styles.inputGroup}>
+            <label htmlFor="amountPaid" className={styles.label}>Amount Paid</label>
+            <div className={styles.inputWrapper}>
+              <IndianRupee size={16} className={styles.inputIcon} />
+              <input
+                id="amountPaid"
+                name="amountPaid"
+                type="number"
+                min="0"
+                step="0.01"
+                value={transaction.amountPaid}
+                onChange={(e) => {
+                  setIsManualPaid(true);
+                  setTransaction((prev) => ({ ...prev, amountPaid: e.target.value }));
+                }}
+                className={`${styles.input} ${styles.inputWithIcon}`}
+                placeholder="0.00"
+              />
+            </div>
           </div>
         </div>
 
-        <form onSubmit={submitSale} className="glass-panel flex flex-col border-primary/20">
-          <h2 className="mb-4 text-lg font-semibold">Transaction Summary</h2>
+        {/* Right Side: Summary Card */}
+        <form onSubmit={submitSale} className={styles.card}>
+          <h2 className={styles.summaryHeader}>Transaction Summary</h2>
 
-          <div className="space-y-3 mb-4 max-h-72 overflow-y-auto pr-1">
+          <div className={styles.summaryList}>
             {itemRows.length === 0 ? (
-              <div className="text-sm text-muted border border-dashed border-white/10 rounded-xl p-4 text-center">
-                No items added yet.
+              <div className={styles.emptyStateContainer}>
+                 <PackageOpen size={32} opacity={0.5}/>
+                 <span style={{ fontSize: '14px', fontWeight: 500 }}>No items added yet</span>
               </div>
             ) : (
               itemRows.map((row, idx) => (
-                <div key={`${row.productId}-${idx}`} className="p-3 rounded-xl bg-white/5 border border-white/10 flex-between gap-3">
+                <div key={`${row.productId}-${idx}`} className={styles.summaryItem}>
                   <div>
-                    <div className="font-medium text-white">{row.name}</div>
-                    <div className="text-xs text-muted">Qty {row.quantity} x ₹{row.sellingPrice}</div>
+                    <div className={styles.summaryItemTitle}>{row.name}</div>
+                    <div className={styles.summaryItemMeta}>Qty {row.quantity} x ₹{row.sellingPrice}</div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-blue-300">₹{row.lineTotal}</div>
-                    <button type="button" onClick={() => removeItem(idx)} className="text-xs text-danger hover:text-red-300 mt-1 inline-flex items-center gap-1">
+                  <div className={styles.summaryItemRight}>
+                    <div className={styles.summaryItemPrice}>₹{row.lineTotal}</div>
+                    <button type="button" onClick={() => removeItem(idx)} className={styles.removeBtn}>
                       <Trash2 size={12} /> Remove
                     </button>
                   </div>
@@ -303,19 +336,39 @@ export default function AddSale() {
             )}
           </div>
 
-          <div className="space-y-2 text-sm border-t border-white/10 pt-4">
-            <div className="flex-between"><span className="text-muted">Items</span><span>{totalQty}</span></div>
-            <div className="flex-between"><span className="text-muted">Total Amount</span><span className="font-semibold">₹{totalAmount}</span></div>
-            <div className="flex-between"><span className="text-muted">Amount Paid</span><span className="text-success">₹{amountPaid}</span></div>
-            <div className="flex-between"><span className="text-muted">Remaining</span><span className={remaining > 0 ? 'text-danger font-semibold' : 'text-success font-semibold'}>₹{remaining}</span></div>
-            <div className="flex-between"><span className="text-muted">Estimated Profit</span><span className="text-green-400 font-semibold">₹{totalProfit}</span></div>
-            <div className="flex-between"><span className="text-muted">Business Date</span><span>{getBusinessDate(5, new Date(transaction.date))}</span></div>
+          <div className={styles.totalsSpacedBlock}>
+            <div className={styles.summaryRow}>
+               <span className={styles.summaryRowLabel}>Items</span>
+               <span className={styles.summaryRowValue}>{totalQty}</span>
+            </div>
+            <div className={styles.summaryRow}>
+               <span className={styles.summaryRowLabel}>Total Amount</span>
+               <span className={styles.summaryTotalAmount}>₹{totalAmount}</span>
+            </div>
+            <div className={styles.summaryRow}>
+               <span className={styles.summaryRowLabel}>Amount Paid</span>
+               <span className={`${styles.summaryRowValue} ${styles.textProfit}`}>₹{amountPaid}</span>
+            </div>
+            <div className={styles.summaryRow}>
+               <span className={styles.summaryRowLabel}>Remaining</span>
+               <span className={`${styles.summaryRowValue} ${remaining > 0 ? styles.textRemaining : styles.textProfit}`}>₹{remaining}</span>
+            </div>
+            <div className={styles.summaryRow}>
+               <span className={styles.summaryRowLabel}>Status</span>
+               <span className={`${styles.statusBadge} ${amountPaid === 0 ? styles.badgeNone : amountPaid < totalAmount ? styles.badgeHalf : styles.badgePaid}`}>
+                  {amountPaid === 0 ? 'Not Paid' : amountPaid < totalAmount ? 'Half Paid' : 'Paid'}
+               </span>
+            </div>
+            <div className={styles.summaryRow}>
+               <span className={styles.summaryRowLabel}>Estimated Profit</span>
+               <span className={`${styles.summaryRowValue} ${styles.textProfit}`}>₹{totalProfit}</span>
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={addSale.isPending || itemRows.length === 0}
-            className="btn w-full mt-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:opacity-50"
+            className={styles.btnPrimary}
           >
             {addSale.isPending ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
             <span>{addSale.isPending ? 'Saving...' : 'Confirm Sale'}</span>

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { PlusCircle, Search, Edit2, Trash2, X, AlertTriangle, Loader2 } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { useInventory, useDeleteInventory, useDeleteOutOfStockInventory, useUpdateInventory } from '@/hooks/useApi';
+import styles from './inventory.module.css';
 
 export default function Inventory() {
   const { data: inventory = [], isLoading } = useInventory();
@@ -76,40 +77,40 @@ export default function Inventory() {
   };
 
   return (
-    <div className="pb-12">
-      <div className="flex-between mb-8">
-        <h1 className="mb-0 text-xl font-semibold tracking-tight">Inventory Management</h1>
-        <div className="flex gap-3">
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Inventory Management</h1>
+        <div className={styles.headerActions}>
           <button
             onClick={() => setShowDeleteOutOfStockModal(true)}
-            className="btn btn-danger py-2.5 px-4"
+            className={styles.btnDanger}
             disabled={deleteOutOfStockMutation.isPending}
           >
             {deleteOutOfStockMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
             Delete All Out of Stock
           </button>
-          <Link href="/add-stock" className="btn btn-outline hover:bg-white/5 bg-white/[0.02] border-white/10 py-2.5">
-            <PlusCircle size={18} className="text-primary" /> Add New Stock
+          <Link href="/add-stock" className={styles.btnOutline}>
+            <PlusCircle size={18} color="#00c6ff" /> Add New Stock
           </Link>
         </div>
       </div>
 
-      <div className="glass-panel p-6 transition-all duration-200">
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_220px_200px_auto] gap-4 items-stretch xl:items-center">
-          <div className="relative min-w-0 md:col-span-2 xl:col-span-1">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><Search size={20} /></span>
+      <div className={styles.glassPanel}>
+        <div className={styles.filterBar}>
+          <div className={styles.searchWrap}>
+            <span className={styles.searchIcon}><Search size={20} /></span>
             <input 
               type="text" 
               placeholder="Search items..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-12 pr-4 w-full min-w-0 mb-0 rounded-xl border border-white/15 bg-white/[0.045] h-12 text-base transition-all duration-200 focus:border-teal-400/60 focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+              className={styles.searchInput}
             />
           </div>
           <select 
             value={availabilityFilter} 
             onChange={(e) => setAvailabilityFilter(e.target.value)}
-            className="w-full min-w-0 mb-0 rounded-xl border border-white/15 bg-white/[0.045] h-12 px-4 text-sm cursor-pointer transition-all duration-200 focus:border-teal-400/60 focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+            className={styles.selectInput}
           >
             <option value="ALL">All Items</option>
             <option value="IN_STOCK">In Stock (&gt; 0)</option>
@@ -119,29 +120,31 @@ export default function Inventory() {
           <select 
             value={sortFilter} 
             onChange={(e) => setSortFilter(e.target.value)}
-            className="w-full min-w-0 mb-0 rounded-xl border border-white/15 bg-white/[0.045] h-12 px-4 text-sm cursor-pointer transition-all duration-200 focus:border-teal-400/60 focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+            className={styles.selectInput}
           >
             <option value="date">Sort by Date</option>
             <option value="profit">Sort by Profit</option>
             <option value="stock">Sort by Stock</option>
           </select>
-          <div className="text-secondary text-sm whitespace-nowrap bg-white/5 px-4 py-2 rounded-lg border border-white/5 self-start xl:self-center md:col-span-2 xl:col-span-1 xl:justify-self-end">
+          <div className={styles.filterStatus}>
             Showing <strong>{filteredInventory.length}</strong> items
           </div>
         </div>
 
         {isLoading ? (
-          <div className="table-container animate-pulse">
-            <table className="w-full text-sm">
+          <div className={styles.tableContainer}>
+            <table className={styles.table}>
               <thead>
-                <tr className="border-b border-white/10">
-                  {['Date Added', 'Item Name', 'Buy Price', 'Sell Price', 'Profit', 'Stock', 'Available', 'Status', 'Actions'].map(h => <th key={h} className="pb-3 text-muted">{h}</th>)}
+                <tr>
+                  {['Date Added', 'Item Name', 'Buy Price', 'Sell Price', 'Profit', 'Stock', 'Available', 'Status', 'Actions'].map(h => <th key={h} className={styles.th}>{h}</th>)}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody>
                 {[...Array(5)].map((_, i) => (
-                  <tr key={i}>
-                    <td colSpan={9} className="py-2"><div className="h-12 bg-white/5 rounded-lg w-full"></div></td>
+                  <tr key={i} className={styles.tr}>
+                    <td colSpan={9} className={styles.td}>
+                      <div className="skeleton" style={{ height: '48px', width: '100%' }}></div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -154,61 +157,61 @@ export default function Inventory() {
           </div>
         ) : (
           <div className="table-container">
-            <table className="w-full text-sm">
+            <table className={styles.table}>
               <thead>
-                <tr className="border-b border-white/10 text-xs">
-                  <th className="font-semibold pb-3 text-muted">Date Added</th>
-                  <th className="font-semibold pb-3 text-muted">Item Name</th>
-                  <th className="font-semibold pb-3 text-muted">Cost Price</th>
-                  <th className="font-semibold pb-3 text-muted">Selling Price</th>
-                  <th className="font-semibold pb-3 text-green-400">Profit</th>
-                  <th className="font-semibold pb-3 text-muted" title="Stock In / Out">In/Out</th>
-                  <th className="font-semibold pb-3 text-muted">Available</th>
-                  <th className="font-semibold pb-3 text-muted">Status</th>
-                  <th className="font-semibold pb-3 text-muted text-right">Actions</th>
+                <tr>
+                  <th className={styles.th}>Date Added</th>
+                  <th className={styles.th}>Item Name</th>
+                  <th className={styles.th}>Cost Price</th>
+                  <th className={styles.th}>Selling Price</th>
+                  <th className={styles.th}>Profit</th>
+                  <th className={styles.th} title="Stock In / Out">In/Out</th>
+                  <th className={styles.th}>Available</th>
+                  <th className={styles.th}>Status</th>
+                  <th className={`${styles.th} ${styles.thRight}`}>Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody>
                 {filteredInventory.map((item) => (
-                  <tr key={item.id} className="group hover:bg-white/[0.02] transition-all duration-200">
-                    <td className="py-4">
-                      <div className="text-muted text-xs group-hover:text-white/80 transition-colors">{formatDateTime(item.dateAdded!)}</div>
+                  <tr key={item.id} className={styles.tr}>
+                    <td className={styles.td}>
+                      {formatDateTime(item.dateAdded!)}
                     </td>
-                    <td className="py-4 font-semibold text-white">{item.name}</td>
-                    <td className="py-4 text-muted">{formatCurrency(item.buyPrice)}</td>
-                    <td className="py-4 text-white">{formatCurrency(item.sellPrice || 0)}</td>
-                    <td className={`py-4 font-bold ${((item.sellPrice || 0) - item.buyPrice) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    <td className={`${styles.td} ${styles.tdBold}`}>{item.name}</td>
+                    <td className={styles.td}>{formatCurrency(item.buyPrice)}</td>
+                    <td className={styles.td}>{formatCurrency(item.sellPrice || 0)}</td>
+                    <td className={styles.td} style={{ color: ((item.sellPrice || 0) - item.buyPrice) >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 'bold' }}>
                       {((item.sellPrice || 0) - item.buyPrice) >= 0 ? '+' : '-'}{formatCurrency(Math.abs((item.sellPrice || 0) - item.buyPrice))}
                     </td>
-                    <td className="py-4 text-xs text-muted">
-                      <span className="text-white">{item.quantityIn}</span> / <span className="opacity-70">{item.quantityOut}</span>
+                    <td className={styles.td}>
+                      {item.quantityIn} / <span className={styles.tdDim}>{item.quantityOut}</span>
                     </td>
-                    <td className="py-4">
-                      <span className={`font-bold ${item.available === 0 ? 'text-danger' : item.available < 5 ? 'text-warning' : 'text-success'}`}>
+                    <td className={styles.td}>
+                      <span style={{ color: item.available === 0 ? 'var(--danger)' : item.available < 5 ? 'var(--warning)' : 'var(--success)', fontWeight: 'bold' }}>
                         {item.available}
                       </span>
                     </td>
-                    <td className="py-4">
+                    <td className={styles.td}>
                       {item.available === 0 ? (
-                        <span className="badge badge-danger">Out of Stock</span>
+                        <span className={styles.badgeDanger}>Out of Stock</span>
                       ) : item.available < 5 ? (
-                        <span className="badge badge-warning text-black">Low Stock</span>
+                        <span className={styles.badgeWarning}>Low Stock</span>
                       ) : (
-                        <span className="badge badge-success">In Stock</span>
+                        <span className={styles.badgeSuccess}>In Stock</span>
                       )}
                     </td>
-                    <td className="py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-70 hover:opacity-100 transition-all duration-200">
+                    <td className={`${styles.td} ${styles.tdRight}`}>
+                      <div className={styles.actionsGroup}>
                         <button 
                           onClick={() => setEditItem(item)}
-                          className="p-1.5 rounded-lg bg-white/5 text-blue-400 hover:bg-white/10 transition-all duration-200 border border-white/10"
+                          className={styles.actionBtn}
                           title="Edit"
                         >
                           <Edit2 size={14} />
                         </button>
                         <button 
                           onClick={() => setDeleteItem(item)}
-                          className="p-1.5 rounded-lg bg-white/5 text-red-400 hover:bg-white/10 transition-all duration-200 border border-white/10"
+                          className={`${styles.actionBtn} ${styles.textDanger}`}
                           title="Delete"
                         >
                           <Trash2 size={14} />
@@ -225,59 +228,59 @@ export default function Inventory() {
 
       {/* Edit Modal */}
       {editItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="glass-panel max-w-md w-full p-6 flex flex-col relative shadow-2xl border-white/20 scale-in-center">
-            <div className="flex-between mb-6 border-b border-white/10 pb-4">
-              <h2 className="text-xl font-bold mb-0">Edit Item</h2>
-              <button onClick={() => setEditItem(null)} className="text-muted hover:text-white transition-colors"><X size={20}/></button>
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Edit Item</h2>
+              <button onClick={() => setEditItem(null)} className={styles.closeBtn}><X size={20}/></button>
             </div>
             <form onSubmit={handleEditSubmit}>
-              <div className="mb-4">
-                <label className="text-sm text-muted mb-2 block">Item Name</label>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Item Name</label>
                 <input 
                   type="text" 
                   value={editItem.name} 
                   onChange={(e) => setEditItem({...editItem, name: e.target.value})} 
-                  className="input-glass"
+                  className={styles.formInput}
                   required
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className={styles.grid2Modal}>
                 <div>
-                  <label className="text-sm text-muted mb-2 block">Buy Price (₹)</label>
+                  <label className={styles.formLabel}>Buy Price (₹)</label>
                   <input 
                     type="number" step="0.01" 
                     value={editItem.buyPrice} 
                     onChange={(e) => setEditItem({...editItem, buyPrice: Number(e.target.value)})} 
-                    className="input-glass"
+                    className={styles.formInput}
                     required
                   />
                 </div>
                 <div>
-                  <label className="text-sm text-muted mb-2 block">Sell Price (₹)</label>
+                  <label className={styles.formLabel}>Sell Price (₹)</label>
                   <input 
                     type="number" step="0.01" 
                     value={editItem.sellPrice} 
                     onChange={(e) => setEditItem({...editItem, sellPrice: Number(e.target.value)})} 
-                    className="input-glass"
+                    className={styles.formInput}
                     required
                   />
                 </div>
               </div>
-              <div className="mb-6">
-                <label className="text-sm text-muted mb-2 block">Total Stock In</label>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Total Stock In</label>
                 <input 
                   type="number" 
                   value={editItem.quantityIn} 
                   onChange={(e) => setEditItem({...editItem, quantityIn: Number(e.target.value)})} 
-                  className="input-glass"
+                  className={styles.formInput}
                   required
                 />
-                <p className="text-xs text-muted mt-2">Note: Changing Total Stock In affects the calculated Available quantity ({editItem.quantityIn - editItem.quantityOut}).</p>
+                <p className={`${styles.formLabel} ${styles.textSecondary}`}>Note: Changing Total Stock In affects the calculated Available quantity ({editItem.quantityIn - editItem.quantityOut}).</p>
               </div>
-              <div className="flex gap-3 justify-end pt-4 border-t border-white/10">
-                <button type="button" onClick={() => setEditItem(null)} className="btn btn-outline py-2 px-4 text-sm">Cancel</button>
-                <button type="submit" disabled={updateMutation.isPending} className="btn py-2 px-6 text-sm">
+              <div className={styles.modalActions}>
+                <button type="button" onClick={() => setEditItem(null)} className={styles.btnOutline}>Cancel</button>
+                <button type="submit" disabled={updateMutation.isPending} className={styles.btnPrimary}>
                   {updateMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : 'Save Changes'}
                 </button>
               </div>
@@ -288,62 +291,56 @@ export default function Inventory() {
 
       {/* Delete Confirmation Modal */}
       {deleteItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="glass-panel max-w-sm w-full p-6 flex flex-col relative shadow-2xl border-danger/20 scale-in-center">
-            
-            <div className="text-center mb-6 mt-2 relative z-10">
-              <div className="bg-danger/20 p-4 rounded-full w-fit mx-auto mb-4 border border-danger/30">
-                <AlertTriangle size={32} className="text-danger" />
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalDangerAlert}>
+              <div className={styles.modalIconWarning}>
+                <AlertTriangle size={32} />
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">Delete Item?</h2>
-              <p className="text-sm text-muted">Are you sure you want to delete <strong className="text-white">{deleteItem.name}</strong>? This action will archive it in Notion.</p>
+              <h2 className={styles.modalTitle}>Delete Item?</h2>
+              <p className={styles.formLabel}>Are you sure you want to delete <strong className={styles.textPrimary}>{deleteItem.name}</strong>? This action will archive it in Notion.</p>
             </div>
 
-            <div className="flex gap-3 relative z-10 mt-2">
-              <button onClick={() => setDeleteItem(null)} className="flex-1 btn btn-outline py-2 border-white/20 hover:bg-white/10 text-sm" disabled={deleteMutation.isPending}>
+            <div className={styles.modalConfirmBtns}>
+              <button onClick={() => setDeleteItem(null)} className={styles.btnOutline} disabled={deleteMutation.isPending}>
                 Cancel
               </button>
-              <button onClick={handleDeleteConfirm} className="flex-1 btn btn-danger py-2 shadow-lg shadow-danger/20 text-sm" disabled={deleteMutation.isPending}>
+              <button onClick={handleDeleteConfirm} className={styles.btnDanger} disabled={deleteMutation.isPending}>
                 {deleteMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : 'Yes, Delete'}
               </button>
             </div>
-            
-            {/* Background warning glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-danger/5 blur-3xl rounded-full z-0 pointer-events-none"></div>
           </div>
         </div>
       )}
 
       {/* Bulk Delete Out-of-Stock Confirmation Modal */}
       {showDeleteOutOfStockModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="glass-panel max-w-sm w-full p-6 flex flex-col relative shadow-2xl border-danger/20 scale-in-center">
-            <div className="text-center mb-6 mt-2 relative z-10">
-              <div className="bg-danger/20 p-4 rounded-full w-fit mx-auto mb-4 border border-danger/30">
-                <AlertTriangle size={32} className="text-danger" />
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalDangerAlert}>
+              <div className={styles.modalIconWarning}>
+                <AlertTriangle size={32} />
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">Delete All Out of Stock?</h2>
-              <p className="text-sm text-muted">Are you sure? This will remove all out-of-stock items.</p>
+              <h2 className={styles.modalTitle}>Delete All Out of Stock?</h2>
+              <p className={styles.formLabel}>Are you sure? This will remove all out-of-stock items.</p>
             </div>
 
-            <div className="flex gap-3 relative z-10 mt-2">
+            <div className={styles.modalConfirmBtns}>
               <button
                 onClick={() => setShowDeleteOutOfStockModal(false)}
-                className="flex-1 btn btn-outline py-2 border-white/20 hover:bg-white/10 text-sm"
+                className={styles.btnOutline}
                 disabled={deleteOutOfStockMutation.isPending}
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteOutOfStock}
-                className="flex-1 btn btn-danger py-2 shadow-lg shadow-danger/20 text-sm"
+                className={styles.btnDanger}
                 disabled={deleteOutOfStockMutation.isPending}
               >
                 {deleteOutOfStockMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : 'Yes, Delete'}
               </button>
             </div>
-
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-danger/5 blur-3xl rounded-full z-0 pointer-events-none"></div>
           </div>
         </div>
       )}

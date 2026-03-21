@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     const { items, createdAt, businessDate } = (await request.json()) as AddStockPayload;
 
     if (!Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: 'At least one stock item is required' }, { status: 400 });
+      return NextResponse.json({ success: false, message: 'At least one stock item is required' }, { status: 400 });
     }
 
     const totalQuantity = items.reduce((acc, item) => acc + Number(item.quantity || 0), 0);
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
         }),
       );
 
-      return NextResponse.json({ success: true, mode: 'legacy-schema' });
+      return NextResponse.json({ success: true, message: 'Stock created securely in fallback mode' });
     }
 
     const supportsBusinessDate = hasProperty(dbProperties, 'Business Date');
@@ -125,8 +125,8 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json({ success: true, id: response.id });
+    return NextResponse.json({ success: true, data: { id: response.id }, message: 'Stock entry created successfully' });
   } catch (error: unknown) {
-    return NextResponse.json({ error: getErrorMessage(error, 'Unable to create stock entry') }, { status: 500 });
+    return NextResponse.json({ success: false, message: getErrorMessage(error, 'Unable to create stock entry') }, { status: 500 });
   }
 }

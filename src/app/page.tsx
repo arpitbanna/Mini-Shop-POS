@@ -15,21 +15,22 @@ import {
   sumItemsSold,
 } from '@/lib/calculations';
 import { getBusinessDate, getBusinessDateRange } from '@/lib/business-day';
+import styles from './dashboard.module.css';
 
 function DashboardSkeleton() {
   return (
-    <div className="flex flex-col gap-6 animate-pulse mt-4">
-      <div className="h-44 bg-white/5 rounded-3xl border border-white/10" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="h-32 bg-white/5 rounded-2xl border border-white/10" />
-        <div className="h-32 bg-white/5 rounded-2xl border border-white/10" />
-        <div className="h-32 bg-white/5 rounded-2xl border border-white/10" />
+    <div className={styles.skeletonContainer}>
+      <div className={`${styles.skeletonHero} skeleton`} />
+      <div className={styles.skeletonGrid3}>
+        <div className={`${styles.skeletonCard} skeleton`} />
+        <div className={`${styles.skeletonCard} skeleton`} />
+        <div className={`${styles.skeletonCard} skeleton`} />
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="h-28 bg-white/5 rounded-2xl border border-white/10" />
-        <div className="h-28 bg-white/5 rounded-2xl border border-white/10" />
-        <div className="h-28 bg-white/5 rounded-2xl border border-white/10" />
-        <div className="h-28 bg-white/5 rounded-2xl border border-white/10" />
+      <div className={styles.skeletonGrid4}>
+        <div className={`${styles.skeletonSmall} skeleton`} />
+        <div className={`${styles.skeletonSmall} skeleton`} />
+        <div className={`${styles.skeletonSmall} skeleton`} />
+        <div className={`${styles.skeletonSmall} skeleton`} />
       </div>
     </div>
   );
@@ -109,160 +110,157 @@ export default function Dashboard() {
   if (isLoading) return <DashboardSkeleton />;
 
   return (
-    <div className="flex flex-col gap-6 pb-12">
-      <div className="flex-between">
-        <h1 className="mb-0 text-xl font-semibold tracking-tight">Dashboard Overview</h1>
-        <div className="flex gap-3">
-          <Link href="/add-purchase" className="btn btn-outline hover:bg-white/5 active:scale-95 transition-all duration-200 text-sm py-2 px-3 rounded-xl border-white/10">
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Dashboard Overview</h1>
+        <div className={styles.headerActions}>
+          <Link href="/add-purchase" className={styles.btnOutline}>
             <ShoppingCart size={16} /> Add Purchase
           </Link>
-          <Link href="/add-expense" className="btn btn-outline hover:bg-white/5 active:scale-95 transition-all duration-200 text-sm py-2 px-3 rounded-xl border-white/10">
+          <Link href="/add-expense" className={styles.btnOutline}>
             <Receipt size={16} /> Add Expense
           </Link>
         </div>
       </div>
 
       {/* Hero Card - Purse Balance */}
-      <div className="glass-panel relative overflow-hidden p-8 flex flex-col items-center justify-center border-primary/30 shadow-[0_0_40px_rgba(59,130,246,0.15)] hover:border-primary/50 group transition-all duration-200">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-32 bg-primary/20 blur-[100px] rounded-full pointer-events-none group-hover:bg-primary/30 transition-all duration-700"></div>
-        <span className="text-sm font-semibold uppercase tracking-widest text-primary mb-2 flex items-center gap-2">
+      <div className={`${styles.glassCard} ${styles.heroCard}`}>
+        <div className={styles.heroGlow}></div>
+        <span className={styles.heroLabel}>
           <Wallet size={16} /> Purse Balance
         </span>
-        <div className={`text-6xl font-bold mb-3 tracking-tighter ${stats.purseBalance >= 0 ? 'text-green-400' : 'text-red-400'} drop-shadow-md`}>
+        <div className={`${styles.heroValue} ${stats.purseBalance >= 0 ? styles.heroValuePositive : styles.heroValueNegative}`}>
           {stats.purseBalance < 0 ? '-' : ''}₹{Math.abs(stats.purseBalance).toLocaleString('en-IN')}
         </div>
-        <div className="text-sm text-muted">
+        <div className={styles.heroSub}>
           Revenue (₹{stats.totalRevenue.toLocaleString('en-IN')}) - Purchases (₹{stats.totalPurchase.toLocaleString('en-IN')}) - Expenses (₹{stats.extraExpenses.toLocaleString('en-IN')})
         </div>
       </div>
 
       {/* Secondary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-panel flex flex-col gap-2 relative overflow-hidden group transition-all duration-200">
-          <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-success/10 blur-3xl group-hover:bg-success/20 transition-all"></div>
-          <div className="flex-between relative z-10">
-            <span className="text-sm text-gray-400 font-medium uppercase tracking-wider">Total Profit</span>
-            <div className="bg-success/20 p-2 rounded-full border border-success/30"><TrendingUp size={20} className="text-success" /></div>
+      <div className={styles.statsGrid3}>
+        <div className={styles.statCard}>
+          <div className={styles.statGlowSuccess}></div>
+          <div className={styles.statHeader}>
+            <span className={styles.statLabel}>Total Profit</span>
+            <div className={styles.statIconSuccess}><TrendingUp size={20} /></div>
           </div>
-          <div className="text-3xl font-bold text-green-400 relative z-10 mt-2">₹{stats.totalProfit.toLocaleString('en-IN')}</div>
+          <div className={styles.statValueSuccess}>₹{stats.totalProfit.toLocaleString('en-IN')}</div>
         </div>
 
-        <div className="glass-panel flex flex-col gap-2 relative overflow-hidden group transition-all duration-200">
-          <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-primary/10 blur-3xl group-hover:bg-primary/20 transition-all"></div>
-          <div className="flex-between relative z-10">
-            <span className="text-sm text-gray-400 font-medium uppercase tracking-wider">Total Sales</span>
-            <div className="bg-primary/20 p-2 rounded-full border border-primary/30"><IndianRupee size={20} className="text-primary" /></div>
+        <div className={styles.statCard}>
+          <div className={styles.statGlowPrimary}></div>
+          <div className={styles.statHeader}>
+            <span className={styles.statLabel}>Total Sales</span>
+            <div className={styles.statIconPrimary}><IndianRupee size={20} /></div>
           </div>
-          <div className="text-3xl font-bold text-blue-400 relative z-10 mt-2">₹{stats.totalRevenue.toLocaleString('en-IN')}</div>
-          <div className="text-sm text-gray-400 mt-1 relative z-10">{stats.totalItemsSold} items sold</div>
+          <div className={styles.statValuePrimary}>₹{stats.totalRevenue.toLocaleString('en-IN')}</div>
+          <div className={styles.statSub}>{stats.totalItemsSold} items sold</div>
         </div>
 
-        <div className="glass-panel flex flex-col gap-2 relative overflow-hidden group transition-all duration-200">
-          <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-warning/10 blur-3xl group-hover:bg-warning/20 transition-all"></div>
-          <div className="flex-between relative z-10">
-            <span className="text-sm text-gray-400 font-medium uppercase tracking-wider">Total Purchase</span>
-            <div className="bg-warning/20 p-2 rounded-full border border-warning/30"><ShoppingCart size={20} className="text-warning" /></div>
+        <div className={styles.statCard}>
+          <div className={styles.statGlowWarning}></div>
+          <div className={styles.statHeader}>
+            <span className={styles.statLabel}>Total Purchase</span>
+            <div className={styles.statIconWarning}><ShoppingCart size={20} /></div>
           </div>
-          <div className="text-3xl font-bold text-red-400 relative z-10 mt-2">₹{stats.totalPurchase.toLocaleString('en-IN')}</div>
+          <div className={styles.statValueWarning}>₹{stats.totalPurchase.toLocaleString('en-IN')}</div>
         </div>
       </div>
 
       {/* Smaller Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="glass-panel p-5 hover:bg-white/[0.08] transition-all duration-200">
-           <div className="flex-between mb-2">
-            <span className="text-sm text-gray-400 uppercase tracking-wider">Today Sales</span>
-            <Activity size={16} className="text-success" />
+      <div className={styles.statsGrid4}>
+        <div className={styles.smallCard}>
+           <div className={styles.smallCardHeader}>
+            <span className={styles.smallCardLabel}>Today Sales</span>
+            <Activity size={16} color="var(--success)" />
           </div>
-          <div className="text-2xl font-bold text-blue-400">₹{stats.todayRevenue.toLocaleString('en-IN')}</div>
-          <div className="text-sm text-gray-400 mt-1">{stats.todaySalesCount} items Today</div>
+          <div className={styles.smallCardValue}>₹{stats.todayRevenue.toLocaleString('en-IN')}</div>
+          <div className={styles.smallCardSub}>{stats.todaySalesCount} items Today</div>
         </div>
 
-        <div className="glass-panel p-5 hover:bg-white/[0.08] transition-all duration-200">
-           <div className="flex-between mb-2">
-            <span className="text-sm text-gray-400 uppercase tracking-wider">Expenses</span>
-            <Receipt size={16} className="text-danger" />
+        <div className={styles.smallCard}>
+           <div className={styles.smallCardHeader}>
+            <span className={styles.smallCardLabel}>Expenses</span>
+            <Receipt size={16} color="var(--danger)" />
           </div>
-          <div className="text-2xl font-bold text-red-400">₹{stats.extraExpenses.toLocaleString('en-IN')}</div>
+          <div className={styles.smallCardValueDanger}>₹{stats.extraExpenses.toLocaleString('en-IN')}</div>
         </div>
 
-        <div className="glass-panel p-5 border-danger/30 hover:border-danger/50 shadow-[0_0_15px_rgba(239,68,68,0.05)] bg-danger/5 transition-all duration-200">
-           <div className="flex-between mb-2">
-            <span className="text-sm text-red-400 uppercase tracking-wider font-semibold">Udhaar</span>
-            <AlertCircle size={16} className="text-danger" />
+        <div className={styles.smallCardDanger}>
+           <div className={styles.smallCardHeader}>
+            <span className={styles.smallCardLabelDanger}>Udhaar</span>
+            <AlertCircle size={16} color="var(--danger)" />
           </div>
-          <div className="text-2xl font-bold text-red-400">₹{stats.pendingPaymentsAmount.toLocaleString('en-IN')}</div>
+          <div className={styles.smallCardValueDanger}>₹{stats.pendingPaymentsAmount.toLocaleString('en-IN')}</div>
         </div>
 
-        <div className="glass-panel p-5 hover:bg-white/[0.08] transition-all duration-200">
-           <div className="flex-between mb-2">
-            <span className="text-sm text-gray-400 uppercase tracking-wider">Available Items</span>
-            <Package size={16} className="text-primary" />
+        <div className={styles.smallCard}>
+           <div className={styles.smallCardHeader}>
+            <span className={styles.smallCardLabel}>Available Items</span>
+            <Package size={16} color="#00c6ff" />
           </div>
-          <div className="text-2xl font-bold text-blue-400">{stats.availableItems.length}</div>
+          <div className={styles.smallCardValue}>{stats.availableItems.length}</div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className={styles.contentGrid}>
         {/* Empty State Handled 7-Day Profit Chart */}
-        <div className="glass-panel lg:col-span-2 flex flex-col">
-          <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-            <TrendingUp size={18} className="text-success" /> 7-Day Profit Trend
+        <div className={`${styles.glassCard} ${styles.span2} ${styles.chartContainer}`}>
+          <h2 className={styles.sectionTitle}>
+            <TrendingUp size={18} color="var(--success)" /> 7-Day Profit Trend
           </h2>
           {stats.hasChartData ? (
-            <div className="mt-auto flex h-52 items-end gap-3 border-b border-white/10 pb-3 pt-5">
+            <div className={styles.chartWrapper}>
               {stats.profitByDay.map((day, idx) => (
-                <div key={idx} className="group relative flex h-full flex-1 flex-col items-center justify-end gap-3">
-                  <div
-                    className="flex h-full w-full flex-col justify-end overflow-hidden rounded-t-xl border border-white/5 bg-gradient-to-b from-slate-700/40 to-slate-900/70"
-                    style={{ height: '100%' }}
-                  >
+                <div key={idx} className={styles.chartBarGroup}>
+                  <div className={styles.chartBarTrack}>
                     <div 
-                      className="relative w-full rounded-t-xl bg-gradient-to-t from-emerald-700/85 via-emerald-500/80 to-emerald-300/95 shadow-[0_-8px_22px_rgba(16,185,129,0.35)] transition-all duration-700 ease-out"
+                      className={styles.chartBarFill}
                       style={{ height: `${Math.max((day.profit / stats.maxProfit) * 100, 2)}%` }}
                     ></div>
-                    <div className="absolute left-1/2 top-0 z-10 -mt-8 -translate-x-1/2 whitespace-nowrap rounded-lg border border-white/10 bg-black/80 px-3 py-1.5 text-center text-xs font-medium text-white opacity-0 shadow-xl backdrop-blur transition-all group-hover:opacity-100">
+                    <div className={styles.chartTooltip}>
                       ₹{day.profit}
                     </div>
                   </div>
-                  <span className="text-muted text-[10px] font-semibold uppercase tracking-[0.14em]">{day.date}</span>
+                  <span className={styles.chartLabel}>{day.date}</span>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center py-10 text-center gap-3 min-h-[220px] border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
-              <div className="bg-white/5 p-4 rounded-full mb-2">
-                <TrendingUp size={32} className="text-muted opacity-50" />
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIconWrapper}>
+                <TrendingUp size={32} opacity={0.5} />
               </div>
-              <p className="text-muted font-medium">No data yet — start selling 🚀</p>
+              <p>No data yet — start selling 🚀</p>
             </div>
           )}
         </div>
 
         {/* Low Stock Items */}
-        <div className="glass-panel flex flex-col">
-          <h2 className="mb-5 flex items-center gap-2 text-xl font-semibold">
-            <AlertCircle size={18} className="text-warning"/> Low Stock Alerts
+        <div className={styles.glassCard}>
+          <h2 className={styles.sectionTitle}>
+            <AlertCircle size={18} color="var(--warning)"/> Low Stock Alerts
           </h2>
           {stats.lowStockItems.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center min-h-[220px] text-center gap-3">
-              <div className="bg-success/10 p-4 rounded-full">
-                <Package size={24} className="text-success opacity-80" />
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIconWrapperSuccess}>
+                <Package size={24} color="var(--success)" />
               </div>
-              <p className="text-sm text-muted">All items are sufficiently stocked!</p>
+              <p>All items are sufficiently stocked!</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-3 overflow-y-auto pr-1" style={{ maxHeight: '260px' }}>
+            <div className={styles.scrollList}>
               {stats.lowStockItems.map((item) => (
-                <div key={item.id} className="flex-between rounded-2xl border border-white/10 bg-gradient-to-r from-white/10 via-white/5 to-transparent px-4 py-3.5 transition-colors hover:bg-white/10">
-                  <div className="flex min-w-0 flex-col gap-1">
-                    <span className="truncate text-base font-semibold text-white">{item.name}</span>
-                    <span className="text-sm text-gray-300">Available: <span className="ml-1 font-bold text-yellow-300">{item.available}</span></span>
+                <div key={item.id} className={styles.listItem}>
+                  <div className={styles.itemInfo}>
+                    <span className={styles.itemName}>{item.name}</span>
+                    <span className={styles.itemStock}>Available: <span className={styles.itemStockValue}>{item.available}</span></span>
                   </div>
                   {item.available === 0 ? (
-                    <span className="badge badge-danger px-3 py-1 text-xs">Out of Stock</span>
+                    <span className={styles.badgeDanger}>Out of Stock</span>
                   ) : (
-                    <span className="badge badge-warning px-3 py-1 text-xs text-black">Low</span>
+                    <span className={styles.badgeWarning}>Low</span>
                   )}
                 </div>
               ))}
@@ -271,52 +269,52 @@ export default function Dashboard() {
         </div>
         
         {/* Recent Sales Table */}
-        <div className="glass-panel lg:col-span-3">
-          <div className="flex-between mb-4">
-            <h2 className="text-xl font-semibold mb-0">Recent Sales</h2>
-            <Link href="/payments" className="text-sm font-semibold text-primary hover:text-primary-hover transition-colors border border-primary/30 px-4 py-1.5 rounded-full bg-primary/10">View All</Link>
+        <div className={`${styles.glassCard} ${styles.span3}`}>
+          <div className={styles.tableHeader}>
+            <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>Recent Sales</h2>
+            <Link href="/payments" className={styles.tableLink}>View All</Link>
           </div>
           {sales.length === 0 ? (
-            <div className="text-center py-10 text-muted font-medium border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">No sales recorded yet.</div>
+            <div className={styles.emptyState} style={{ minHeight: '120px', padding: '20px' }}>No sales recorded yet.</div>
           ) : (
-            <div className="table-container">
-              <table className="w-full text-sm">
+            <div className={styles.tableContainer}>
+              <table className={styles.table}>
                 <thead>
-                  <tr className="text-xs border-b border-white/10">
-                    <th className="font-semibold pb-3 text-muted">Date</th>
-                    <th className="font-semibold pb-3 text-muted">Item</th>
-                    <th className="font-semibold pb-3 text-muted">Total</th>
-                    <th className="font-semibold pb-3 text-muted">Amount Paid</th>
-                    <th className="font-semibold pb-3 text-muted">Status</th>
+                  <tr>
+                    <th className={styles.th}>Date</th>
+                    <th className={styles.th}>Item</th>
+                    <th className={styles.th}>Total</th>
+                    <th className={styles.th}>Amount Paid</th>
+                    <th className={styles.th}>Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody>
                   {recentSales.slice(0, 5).map((sale) => (
-                    <tr key={sale.id} className="group hover:bg-white/[0.02] transition-colors">
-                      <td className="py-4">
-                        <div className="text-muted text-xs group-hover:text-white/80 transition-colors">{formatDateTime(sale.createdAt)}</div>
-                        <div className="text-muted text-[10px]">Business Day: {sale.businessDate}</div>
+                    <tr key={sale.id} className={styles.tr}>
+                      <td className={styles.td}>
+                        <div className={styles.tableDate}>{formatDateTime(sale.createdAt)}</div>
+                        <div className={styles.tableMeta}>Business Day: {sale.businessDate}</div>
                       </td>
-                      <td className="py-4">
-                        <div className="font-medium text-white">
+                      <td className={styles.td}>
+                        <div className={styles.tableItemName}>
                           {sale.items.length === 1 ? sale.items[0].name : `${sale.items.length} items`}
                         </div>
-                        <div className="text-xs text-muted mt-1">
+                        <div className={styles.tableItemDesc}>
                           {sale.items.map((item) => `${item.name} x${item.quantity}`).join(', ')}
                         </div>
-                        <div className="text-xs text-primary/80 mt-1 font-medium">
+                        <div className={styles.tableItemRoom}>
                           {sale.roomNo ? (sale.roomNo.match(/^\d+$/) ? `Room ${sale.roomNo}` : sale.roomNo) : '-'}
                         </div>
                       </td>
-                      <td className="py-4 font-bold text-blue-400">₹{sale.totalAmount}</td>
-                      <td className="py-4 font-medium text-muted">₹{sale.amountPaid}</td>
-                      <td className="py-4">
+                      <td className={`${styles.td} ${styles.tableTotal}`}>₹{sale.totalAmount}</td>
+                      <td className={`${styles.td} ${styles.tablePaid}`}>₹{sale.amountPaid}</td>
+                      <td className={styles.td}>
                         {sale.remaining <= 0 ? (
-                          <span className="badge badge-success">Paid</span>
+                          <span className={styles.badgeSuccess}>Paid</span>
                         ) : sale.amountPaid <= 0 ? (
-                          <span className="badge badge-danger">Udhaar</span>
+                          <span className={styles.badgeDangerOutline}>Udhaar</span>
                         ) : (
-                          <span className="badge badge-warning text-black">Partially</span>
+                          <span className={styles.badgeWarningOutline}>Partially</span>
                         )}
                       </td>
                     </tr>
