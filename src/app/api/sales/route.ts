@@ -116,7 +116,8 @@ export async function GET(request: Request) {
     const itemRelationKey = findPropertyKey(stockOutDbProperties, ['Item', 'Product', 'Inventory Item'], ['relation']);
     const sellPriceKey = findPropertyKey(stockOutDbProperties, ['Sell Price', 'Selling Price', 'Rate'], ['number'], false);
     const quantityKey = findPropertyKey(stockOutDbProperties, ['Quantity', 'Qty'], ['number'], false);
-    const buyPriceKey = findPropertyKey(stockOutDbProperties, ['Buy Price', 'Cost Price'], ['rollup', 'number'], false);
+    const buyPriceKey = findPropertyKey(stockOutDbProperties, ['Buy Price', 'Cost Price'], ['number', 'rollup'], false);
+    const itemNameKey = findPropertyKey(stockOutDbProperties, ['Item Name', 'Product Name'], ['rich_text', 'title'], false);
     const roomNoKey = findPropertyKey(stockOutDbProperties, ['Room No', 'Room', 'Room Number'], ['rich_text', 'title'], false);
 
     const stockOutRes = await queryAllDatabasePages(notion, {
@@ -174,14 +175,28 @@ export async function GET(request: Request) {
               const sellPrice = sellPriceKey ? getNumberProperty(page.properties, sellPriceKey, 0) : 0;
               const quantity = quantityKey ? getNumberProperty(page.properties, quantityKey, 0) : 0;
               const fallbackBuyPrice = itemNameMap.get(itemId)?.buyPrice || 0;
-              const buyPrice = buyPriceKey
-                ? getRollupNumberProperty(page.properties, buyPriceKey, fallbackBuyPrice)
-                : fallbackBuyPrice;
+              
+              let buyPrice = fallbackBuyPrice;
+              if (buyPriceKey) {
+                const buyPriceType = getDbPropertyRecord(stockOutDbProperties, buyPriceKey).type;
+                if (buyPriceType === 'number') {
+                  buyPrice = getNumberProperty(page.properties, buyPriceKey, fallbackBuyPrice);
+                } else if (buyPriceType === 'rollup') {
+                  buyPrice = getRollupNumberProperty(page.properties, buyPriceKey, fallbackBuyPrice);
+                }
+              }
+
+              let itemNameText = '';
+              if (itemNameKey) {
+                const itemNameType = getDbPropertyRecord(stockOutDbProperties, itemNameKey).type;
+                itemNameText = getDateOrTextPropertyByKey(page.properties, itemNameKey, itemNameType, '');
+              }
+              const finalItemName = itemNameText || itemNameMap.get(itemId)?.name || 'Unknown';
 
               return [
                 {
-                  productId: itemId,
-                  name: itemNameMap.get(itemId)?.name || 'Unknown',
+                  productId: itemId || `snap-${page.id}`,
+                  name: finalItemName,
                   quantity,
                   sellingPrice: sellPrice,
                   costPrice: buyPrice,

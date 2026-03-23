@@ -111,6 +111,10 @@ export async function POST(request: Request) {
     const businessDateKey = findPropertyKey(dbProperties, ['Business Date', 'businessDate', 'BusinessDate', 'Biz Date'], ['rich_text', 'date'], false);
     const itemsKey = findPropertyKey(dbProperties, ['Items', 'items', 'Sale Items', 'Transaction Items'], ['rich_text'], false);
     const nameTitleKey = findPropertyKey(dbProperties, ['Name', 'Title'], ['title']);
+    
+    // Attempt to locate fields to store a static snapshot instead of relying solely on relation rollups
+    const buyPriceKey = findPropertyKey(dbProperties, ['Buy Price', 'Cost Price'], ['number'], false);
+    const itemNameKey = findPropertyKey(dbProperties, ['Item Name', 'Product Name'], ['rich_text', 'title'], false);
 
     const supportsGroupedItems = !!itemsKey;
 
@@ -190,20 +194,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, data: { id: response.id }, message: 'Sale created successfully' });
     }
 
-    if (!itemRelationKey) {
-      return NextResponse.json(
-        { success: false, message: 'Required relation property for sold item is missing in stock-out database schema' },
-        { status: 400 },
-      );
-    }
-
     const stockInRes = await notion.databases.query({ database_id: STOCK_IN_DB_ID });
-    const stockNameToId = new Map<string, string>();
+    const stockMap = new Map<string, { id: string; name: string; buyPrice: number }>();
+    
     stockInRes.results.forEach((result) => {
       const title = getTitleFromPage(result);
       const id = (result as UnknownRecord)?.id;
+      const properties = (result as UnknownRecord)?.properties as UnknownRecord;
+      let buyPrice = 0;
+      
+      // Attempt to read 'Buy Price' natively
+      if (properties) {
+        const bpProp = properties['Buy Price'] || properties['Cost Price'];
+        if (bpProp && typeof bpProp === 'object' && (bpProp as UnknownRecord).type === 'number') {
+          buyPrice = Number((bpProp as UnknownRecord).number) || 0;
+        }
+      }
+      
       if (typeof id === 'string' && title) {
-        stockNameToId.set(normalizeKey(title), id);
+        const normalized = normalizeKey(title);
+        // Map by title
+        stockMap.set(normalized, { id, name: title, buyPrice });
+        // Map by id
+        stockMap.set(id, { id, name: title, buyPrice });
       }
     });
 
@@ -225,22 +238,36 @@ export async function POST(request: Request) {
           remainingAmountPaid -= proportionalPaid;
         }
 
-        const relationId = isUuid(item.productId)
-          ? item.productId
-          : stockNameToId.get(normalizeKey(item.name || item.productId || ''));
+        const normalizedKey = normalizeKey(item.name || item.productId || '');
+        const stockData = stockMap.get(item.productId) || stockMap.get(normalizedKey);
+        const relationId = isUuid(item.productId) ? item.productId : stockData?.id;
 
-        if (!relationId) {
-          return NextResponse.json(
-            {
-              success: false, message: `Unable to map item "${item.name}" to a stock record UUID. Select the item again from inventory list.`,
-            },
-            { status: 400 },
-          );
+        const finalItemName = item.name || stockData?.name || 'Unknown Item';
+        const finalBuyPrice = Number(item.costPrice) > 0 ? Number(item.costPrice) : (stockData?.buyPrice || 0);
+
+        const properties: NonNullable<Parameters<typeof notion.pages.create>[0]['properties']> = {};
+
+        if (itemRelationKey && relationId) {
+          properties[itemRelationKey] = { relation: [{ id: relationId }] };
+        }
+        
+        // Populate snapshot fields if they exist in schema
+        if (buyPriceKey) {
+          properties[buyPriceKey] = { number: finalBuyPrice };
         }
 
-        const properties: NonNullable<Parameters<typeof notion.pages.create>[0]['properties']> = {
-          [itemRelationKey]: { relation: [{ id: relationId }] },
-        };
+        if (itemNameKey) {
+          if (getDbPropertyRecord(dbProperties, itemNameKey).type === 'title') {
+            properties[itemNameKey] = { title: [{ text: { content: finalItemName } }] };
+          } else {
+            properties[itemNameKey] = { rich_text: [{ text: { content: finalItemName } }] };
+          }
+        }
+        
+        // Use nameTitleKey for the row's name title if it wasn't used for itemNameKey
+        if (nameTitleKey && nameTitleKey !== itemNameKey) {
+            properties[nameTitleKey] = { title: [{ text: { content: finalItemName } }] };
+        }
 
         if (sellPriceKey) {
           properties[sellPriceKey] = { number: Number(item.sellingPrice || 0) };
