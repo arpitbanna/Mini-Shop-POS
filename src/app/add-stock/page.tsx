@@ -8,6 +8,7 @@ import styles from '@/styles/form.module.css';
 import { getLocalDatetimeStr } from '@/lib/utils';
 import { getBusinessDate } from '@/lib/business-day';
 import { toast } from 'sonner';
+import OCRUploader from '@/components/OCRUploader';
 
 type StockDraftItem = {
   name: string;
@@ -92,6 +93,10 @@ export default function AddStock() {
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleAddOcrItems = (detectedItems: any[]) => {
+    setItems((prev) => [...prev, ...detectedItems]);
+  };
+
   const submitStock = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -136,9 +141,12 @@ export default function AddStock() {
       </div>
 
       <div className={styles.gridContainer}>
-        <div className={styles.card}>
-          <div className={styles.inputGroup}>
-            <label htmlFor="date" className={styles.label}>Date & Time</label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <OCRUploader onAddItems={handleAddOcrItems} />
+
+          <div className={styles.card}>
+            <div className={styles.inputGroup}>
+              <label htmlFor="date" className={styles.label}>Date & Time</label>
             <div className={styles.inputWrapper}>
               <Calendar size={16} className={styles.inputIcon} />
               <input
@@ -239,6 +247,7 @@ export default function AddStock() {
               <Plus size={16} /> Add Item
             </button>
           </div>
+        </div>
         </div>
 
         <form onSubmit={submitStock} className={styles.card}>
