@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useInventory, useAddInventory } from '@/hooks/useApi';
 import { Save, Loader2, Plus, Trash2, ArrowLeft, Box, IndianRupee, Hash, PackageOpen, Calendar } from 'lucide-react';
@@ -16,6 +16,53 @@ type StockDraftItem = {
   sellPrice: string;
   quantity: string;
 };
+
+// --- Smart Calculation Helpers ---
+// Given any 2 of (unitPrice, qty, total), calculate the 3rd.
+// Returns new values. `changedField` is which field the user just typed in.
+function smartCalc(
+  unitPrice: string,
+  qty: string,
+  total: string,
+  changedField: 'unit' | 'qty' | 'total'
+): { unitPrice: string; qty: string; total: string } {
+  const u = parseFloat(unitPrice);
+  const q = parseFloat(qty);
+  const t = parseFloat(total);
+
+  // When user changes unit price
+  if (changedField === 'unit') {
+    if (!isNaN(u) && !isNaN(q) && q > 0) {
+      return { unitPrice, qty, total: (u * q).toFixed(2) };
+    }
+    if (!isNaN(u) && !isNaN(t) && u > 0) {
+      return { unitPrice, qty: (t / u).toFixed(2), total };
+    }
+  }
+
+  // When user changes quantity
+  if (changedField === 'qty') {
+    if (!isNaN(u) && !isNaN(q) && u > 0) {
+      return { unitPrice, qty, total: (u * q).toFixed(2) };
+    }
+    if (!isNaN(t) && !isNaN(q) && q > 0) {
+      return { unitPrice: (t / q).toFixed(2), qty, total };
+    }
+  }
+
+  // When user changes total
+  if (changedField === 'total') {
+    if (!isNaN(t) && !isNaN(q) && q > 0) {
+      return { unitPrice: (t / q).toFixed(2), qty, total };
+    }
+    if (!isNaN(t) && !isNaN(u) && u > 0) {
+      return { unitPrice, qty: (t / u).toFixed(2), total };
+    }
+  }
+
+  // Not enough info to calculate — return as-is
+  return { unitPrice, qty, total };
+}
 
 export default function AddStock() {
   const router = useRouter();
@@ -33,10 +80,14 @@ export default function AddStock() {
     quantity: '1',
   });
 
-  const [items, setItems] = useState<StockDraftItem[]>([]);
+  // Smart calc totals
+  const [totalBuy, setTotalBuy] = useState('');
+  const [totalSell, setTotalSell] = useState('');
 
-  const fieldClass =
-    'w-full rounded-xl border border-white/15 bg-white/[0.045] px-4 py-3 text-base text-white transition-all duration-200 focus:border-teal-400/70 focus:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-teal-500/40';
+  // Track which field user is actively editing to prevent loops
+  const lastEditedRef = useRef<string | null>(null);
+
+  const [items, setItems] = useState<StockDraftItem[]>([]);
 
   const uniqueItems = Array.from(new Set(inventory.map((item) => item.name))).map((name) => {
     const existing = inventory.find((item) => item.name === name);
@@ -49,21 +100,75 @@ export default function AddStock() {
 
   const summary = useMemo(() => {
     const totalQty = items.reduce((acc, item) => acc + Number(item.quantity || 0), 0);
-    const estimatedValue = items.reduce((acc, item) => acc + Number(item.sellPrice || 0) * Number(item.quantity || 0), 0);
-    return { totalQty, estimatedValue };
+    const estimatedBuyValue = items.reduce((acc, item) => acc + Number(item.buyPrice || 0) * Number(item.quantity || 0), 0);
+    const estimatedSellValue = items.reduce((acc, item) => acc + Number(item.sellPrice || 0) * Number(item.quantity || 0), 0);
+    const estimatedProfit = estimatedSellValue - estimatedBuyValue;
+    return { totalQty, estimatedBuyValue, estimatedSellValue, estimatedProfit };
   }, [items]);
 
-  const handleDraftChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const next = { ...draft, [e.target.name]: e.target.value };
+  // --- Smart field handlers ---
+  const handleBuyPriceChange = useCallback((value: string) => {
+    lastEditedRef.current = 'buyPrice';
+    const result = smartCalc(value, draft.quantity, totalBuy, 'unit');
+    setDraft(prev => ({ ...prev, buyPrice: result.unitPrice }));
+    setTotalBuy(result.total);
+    // Don't override qty from buy side if user hasn't touched it
+  }, [draft.quantity, totalBuy]);
 
-    if (e.target.name === 'name') {
-      const matched = uniqueItems.find((item) => item.name.toLowerCase() === e.target.value.toLowerCase());
+  const handleSellPriceChange = useCallback((value: string) => {
+    lastEditedRef.current = 'sellPrice';
+    const result = smartCalc(value, draft.quantity, totalSell, 'unit');
+    setDraft(prev => ({ ...prev, sellPrice: result.unitPrice }));
+    setTotalSell(result.total);
+  }, [draft.quantity, totalSell]);
+
+  const handleQtyChange = useCallback((value: string) => {
+    lastEditedRef.current = 'quantity';
+    // Recalculate both totals when qty changes
+    const buyResult = smartCalc(draft.buyPrice, value, totalBuy, 'qty');
+    const sellResult = smartCalc(draft.sellPrice, value, totalSell, 'qty');
+    setDraft(prev => ({ ...prev, quantity: value }));
+    setTotalBuy(buyResult.total);
+    setTotalSell(sellResult.total);
+  }, [draft.buyPrice, draft.sellPrice, totalBuy, totalSell]);
+
+  const handleTotalBuyChange = useCallback((value: string) => {
+    lastEditedRef.current = 'totalBuy';
+    setTotalBuy(value);
+    const result = smartCalc(draft.buyPrice, draft.quantity, value, 'total');
+    setDraft(prev => ({ ...prev, buyPrice: result.unitPrice, quantity: result.qty }));
+  }, [draft.buyPrice, draft.quantity]);
+
+  const handleTotalSellChange = useCallback((value: string) => {
+    lastEditedRef.current = 'totalSell';
+    setTotalSell(value);
+    const result = smartCalc(draft.sellPrice, draft.quantity, value, 'total');
+    setDraft(prev => ({ ...prev, sellPrice: result.unitPrice }));
+    // qty already set from total buy, don't override
+  }, [draft.sellPrice, draft.quantity]);
+
+  const handleDraftChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    if (name === 'buyPrice') { handleBuyPriceChange(value); return; }
+    if (name === 'sellPrice') { handleSellPriceChange(value); return; }
+    if (name === 'quantity') { handleQtyChange(value); return; }
+
+    // Name field with autocomplete
+    const next = { ...draft, [name]: value };
+    if (name === 'name') {
+      const matched = uniqueItems.find((item) => item.name.toLowerCase() === value.toLowerCase());
       if (matched) {
         next.buyPrice = String(matched.buyPrice);
         next.sellPrice = String(matched.sellPrice);
+        // Recalculate totals with matched prices
+        const q = parseFloat(next.quantity);
+        if (!isNaN(q) && q > 0) {
+          setTotalBuy((matched.buyPrice * q).toFixed(2));
+          setTotalSell((matched.sellPrice * q).toFixed(2));
+        }
       }
     }
-
     setDraft(next);
   };
 
@@ -87,6 +192,8 @@ export default function AddStock() {
 
     setItems((prev) => [...prev, draft]);
     setDraft({ name: '', buyPrice: '', sellPrice: '', quantity: '1' });
+    setTotalBuy('');
+    setTotalSell('');
   };
 
   const removeItem = (index: number) => {
@@ -239,6 +346,54 @@ export default function AddStock() {
               </div>
             </div>
 
+            {/* Smart Total Calculation Fields */}
+            <div className={styles.twoColumnGrid}>
+              <div className={styles.inputGroup}>
+                <label htmlFor="totalBuy" className={styles.label}>
+                  Total Buy <span className={styles.smartLabel}>Smart Calc</span>
+                </label>
+                <div className={styles.inputWrapper}>
+                  <IndianRupee size={16} className={styles.inputIcon} />
+                  <input
+                    id="totalBuy"
+                    name="totalBuy"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={totalBuy}
+                    onChange={(e) => handleTotalBuyChange(e.target.value)}
+                    className={`${styles.input} ${styles.inputWithIcon} ${styles.smartInput}`}
+                    placeholder="Auto / Enter"
+                  />
+                </div>
+                {totalBuy && (
+                  <p className={styles.smartHint}>Total Buy = ₹{Number(totalBuy).toLocaleString('en-IN')}</p>
+                )}
+              </div>
+              <div className={styles.inputGroup}>
+                <label htmlFor="totalSell" className={styles.label}>
+                  Total Sell <span className={styles.smartLabel}>Smart Calc</span>
+                </label>
+                <div className={styles.inputWrapper}>
+                  <IndianRupee size={16} className={styles.inputIcon} />
+                  <input
+                    id="totalSell"
+                    name="totalSell"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={totalSell}
+                    onChange={(e) => handleTotalSellChange(e.target.value)}
+                    className={`${styles.input} ${styles.inputWithIcon} ${styles.smartInput}`}
+                    placeholder="Auto / Enter"
+                  />
+                </div>
+                {totalSell && (
+                  <p className={styles.smartHint}>Total Sell = ₹{Number(totalSell).toLocaleString('en-IN')}</p>
+                )}
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={addItem}
@@ -286,8 +441,18 @@ export default function AddStock() {
                <span className={styles.summaryRowValue}>{summary.totalQty}</span>
             </div>
             <div className={styles.summaryRow}>
+               <span className={styles.summaryRowLabel}>Total Buy Value</span>
+               <span className={styles.summaryRowValue}>₹{summary.estimatedBuyValue.toLocaleString('en-IN')}</span>
+            </div>
+            <div className={styles.summaryRow}>
                <span className={styles.summaryRowLabel}>Estimated Sell Value</span>
-               <span className={styles.summaryTotalAmount}>₹{summary.estimatedValue}</span>
+               <span className={styles.summaryTotalAmount}>₹{summary.estimatedSellValue.toLocaleString('en-IN')}</span>
+            </div>
+            <div className={styles.summaryRow}>
+               <span className={styles.summaryRowLabel}>Expected Profit</span>
+               <span className={`${styles.summaryRowValue} ${summary.estimatedProfit >= 0 ? styles.textProfit : styles.textRemaining}`}>
+                 {summary.estimatedProfit >= 0 ? '+' : ''}₹{summary.estimatedProfit.toLocaleString('en-IN')}
+               </span>
             </div>
           </div>
 

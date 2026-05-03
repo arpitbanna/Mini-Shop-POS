@@ -18,7 +18,26 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <Toaster position="top-center" richColors theme="dark" />
+      <Toaster 
+        position="top-center" 
+        richColors 
+        theme="dark" 
+        closeButton
+        toastOptions={{
+          style: {
+            background: 'rgba(15, 23, 42, 0.95)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(12px)',
+            color: '#fff',
+            fontSize: '14px',
+            borderRadius: '12px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+          },
+          className: 'custom-toast',
+        }}
+        expand={false}
+        duration={3000}
+      />
     </QueryClientProvider>
   );
 }

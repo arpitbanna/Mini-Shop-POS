@@ -67,3 +67,26 @@ a {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(74, 144, 226, 0.6);
 }
+
+/* Sonner Toast Customization */
+[data-sonner-toast] [data-close-button] {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 6px !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  width: 22px !important;
+  height: 22px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #fff !important;
+}

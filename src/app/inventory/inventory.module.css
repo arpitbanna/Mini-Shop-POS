@@ -236,12 +236,30 @@
 .textSuccess { color: var(--success); }
 .textWarning { color: var(--warning); }
 
+.tr {
+  transition: background 0.15s ease;
+}
+
 .tr:hover .td {
   background: rgba(255, 255, 255, 0.02);
 }
 
 .tr:last-child .td {
   border-bottom: none;
+}
+
+/* Low Stock Row Highlight */
+.trLowStock {
+  position: relative;
+}
+
+.trLowStock .td {
+  background: rgba(255, 210, 77, 0.03);
+  border-left: none;
+}
+
+.trLowStock:hover .td {
+  background: rgba(255, 210, 77, 0.06);
 }
 
 @media (max-width: 768px) {
@@ -257,6 +275,18 @@
   }
 }
 
+/* Profit Color Classes */
+.profitPositive {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.profitNegative {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+/* Badges */
 .badgeSuccess {
   background: rgba(0, 255, 163, 0.1);
   color: var(--success);
@@ -275,6 +305,12 @@
   border-radius: 999px;
   font-size: 12px;
   font-weight: 500;
+  animation: pulseBadge 2s ease-in-out infinite;
+}
+
+@keyframes pulseBadge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 .badgeDanger {
@@ -287,6 +323,7 @@
   font-weight: 500;
 }
 
+/* Actions */
 .actionBtn {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border-soft);
@@ -301,12 +338,162 @@
 .actionBtn:hover {
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
+  transform: scale(1.05);
+}
+
+.actionBtn:active {
+  transform: scale(0.95);
+}
+
+.actionBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Quick Add (+1) Button */
+.quickAddBtn {
+  color: var(--success);
+  border-color: rgba(0, 255, 163, 0.2);
+}
+
+.quickAddBtn:hover {
+  background: rgba(0, 255, 163, 0.1);
+  color: var(--success);
+  border-color: rgba(0, 255, 163, 0.4);
+  box-shadow: 0 0 8px rgba(0, 255, 163, 0.15);
 }
 
 .actionsGroup {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+/* ---- Sticky Totals Row ---- */
+.totalsRow {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+}
+
+.tdTotal {
+  padding: 14px 8px;
+  background: rgba(0, 198, 255, 0.06);
+  border-top: 2px solid rgba(0, 198, 255, 0.25);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 13px;
+  backdrop-filter: blur(8px);
+}
+
+.totalsRow:first-child .tdTotal {
+  border-bottom: none;
+}
+
+.totalItemCount {
+  margin-left: 12px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* Mode label in totals row */
+.totalModeLabel {
+  margin-left: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #00c6ff;
+  background: rgba(0, 198, 255, 0.1);
+  border: 1px solid rgba(0, 198, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* ---- Toggle Bar ---- */
+.toggleBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.toggleGroup {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.toggleBtn {
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.toggleBtn:first-child {
+  border-right: 1px solid var(--border-soft);
+}
+
+.toggleBtn:hover:not(.toggleBtnActive) {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.toggleBtnActive {
+  background: linear-gradient(135deg, rgba(0, 198, 255, 0.15), rgba(0, 255, 163, 0.1));
+  color: #fff;
+  font-weight: 600;
+  box-shadow: inset 0 0 12px rgba(0, 198, 255, 0.1);
+}
+
+.toggleHint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+/* ---- Inline Edit ---- */
+.inlineInput {
+  background: rgba(0, 255, 208, 0.08);
+  border: 1px solid rgba(0, 255, 208, 0.4);
+  border-radius: 6px;
+  color: var(--text-primary);
+  padding: 4px 8px;
+  font-size: 13px;
+  width: 90px;
+  outline: none;
+  transition: all 0.15s ease;
+  box-shadow: 0 0 0 2px rgba(0, 255, 208, 0.15);
+}
+
+.inlineInput:focus {
+  border-color: rgba(0, 255, 208, 0.7);
+  box-shadow: 0 0 0 3px rgba(0, 255, 208, 0.2);
+}
+
+.editableCell {
+  cursor: default;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.editableCell:hover {
+  background: rgba(255, 255, 255, 0.05);
+  outline: 1px dashed rgba(255, 255, 255, 0.15);
 }
 
 /* Modals */

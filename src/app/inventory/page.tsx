@@ -1,12 +1,18 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { InventoryItem } from '@/lib/types';
 import Link from 'next/link';
-import { PlusCircle, Search, Edit2, Trash2, X, AlertTriangle, Loader2 } from 'lucide-react';
+import { PlusCircle, Search, Edit2, Trash2, X, AlertTriangle, Loader2, Plus } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { useInventory, useDeleteInventory, useDeleteOutOfStockInventory, useUpdateInventory } from '@/hooks/useApi';
 import styles from './inventory.module.css';
+import { toast } from 'sonner';
+
+// --- Helper: calculate per-unit profit ---
+function getUnitProfit(item: { sellPrice?: number | null; buyPrice: number }) {
+  return (item.sellPrice || 0) - item.buyPrice;
+}
 
 export default function Inventory() {
   const { data: inventory = [], isLoading } = useInventory();
@@ -18,9 +24,18 @@ export default function Inventory() {
   const [availabilityFilter, setAvailabilityFilter] = useState('ALL');
   const [sortFilter, setSortFilter] = useState('date');
 
+  // --- Totals mode toggle ---
+  const [totalsMode, setTotalsMode] = useState<'stock' | 'item'>('stock');
+
   const [editItem, setEditItem] = useState<InventoryItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<InventoryItem | null>(null);
   const [showDeleteOutOfStockModal, setShowDeleteOutOfStockModal] = useState(false);
+
+  // --- Inline edit state ---
+  const [inlineEditId, setInlineEditId] = useState<string | null>(null);
+  const [inlineEditField, setInlineEditField] = useState<string | null>(null);
+  const [inlineEditValue, setInlineEditValue] = useState('');
+  const inlineInputRef = useRef<HTMLInputElement>(null);
 
   const inventoryWithAvailable = useMemo(() => {
     return inventory.map((item) => ({
@@ -39,12 +54,150 @@ export default function Inventory() {
       if (availabilityFilter === 'OUT_OF_STOCK') return item.available === 0;
       return true;
     }).sort((a, b) => {
+      // Low stock items always float to top
+      const aIsLow = a.available > 0 && a.available < 5;
+      const bIsLow = b.available > 0 && b.available < 5;
+      if (aIsLow && !bIsLow) return -1;
+      if (!aIsLow && bIsLow) return 1;
+
       if (sortFilter === 'date') return new Date(b.dateAdded!).getTime() - new Date(a.dateAdded!).getTime();
       if (sortFilter === 'profit') return ((b.sellPrice || 0) - b.buyPrice) - ((a.sellPrice || 0) - a.buyPrice);
       if (sortFilter === 'stock') return b.available - a.available;
       return 0;
     });
   }, [inventoryWithAvailable, search, availabilityFilter, sortFilter]);
+
+  // --- Reusable totals calculator (supports both modes) ---
+  function calculateTotals(
+    items: typeof filteredInventory,
+    mode: 'stock' | 'item'
+  ) {
+    const totalItems = items.length;
+    const totalQty = items.reduce((sum, item) => sum + item.available, 0);
+
+    let totalBuyValue: number;
+    let totalSellValue: number;
+
+    if (mode === 'stock') {
+      // Stock Value: price × available qty
+      totalBuyValue = items.reduce((sum, item) => sum + item.buyPrice * item.available, 0);
+      totalSellValue = items.reduce((sum, item) => sum + (item.sellPrice || 0) * item.available, 0);
+    } else {
+      // Per Item: just sum of unit prices
+      totalBuyValue = items.reduce((sum, item) => sum + item.buyPrice, 0);
+      totalSellValue = items.reduce((sum, item) => sum + (item.sellPrice || 0), 0);
+    }
+
+    const totalProfit = totalSellValue - totalBuyValue;
+    return { totalItems, totalQty, totalBuyValue, totalSellValue, totalProfit };
+  }
+
+  // --- Computed totals (reactive to mode + filtered data) ---
+  const totals = useMemo(
+    () => calculateTotals(filteredInventory, totalsMode),
+    [filteredInventory, totalsMode]
+  );
+
+  // --- Quick +1 stock action ---
+  const handleQuickAdd = useCallback((item: InventoryItem & { available: number }) => {
+    updateMutation.mutate(
+      {
+        id: item.id,
+        quantityIn: item.quantityIn + 1,
+      },
+      {
+        onSuccess: () => toast.success(`+1 ${item.name}`),
+      }
+    );
+  }, [updateMutation]);
+
+  // --- Inline edit handlers ---
+  const startInlineEdit = useCallback((itemId: string, field: string, currentValue: string | number) => {
+    setInlineEditId(itemId);
+    setInlineEditField(field);
+    setInlineEditValue(String(currentValue));
+    setTimeout(() => inlineInputRef.current?.focus(), 50);
+  }, []);
+
+  const saveInlineEdit = useCallback(() => {
+    if (!inlineEditId || !inlineEditField) return;
+    
+    const item = inventoryWithAvailable.find(i => i.id === inlineEditId);
+    if (!item) return;
+
+    const numValue = Number(inlineEditValue);
+    
+    // Build update payload based on which field was edited
+    const payload: { id: string; name?: string; buyPrice?: number; sellPrice?: number; quantityIn?: number } = { id: inlineEditId };
+    
+    if (inlineEditField === 'name') {
+      if (!inlineEditValue.trim()) {
+        toast.error('Name cannot be empty');
+        cancelInlineEdit();
+        return;
+      }
+      payload.name = inlineEditValue.trim();
+    } else if (inlineEditField === 'buyPrice') {
+      if (isNaN(numValue) || numValue < 0) { cancelInlineEdit(); return; }
+      payload.buyPrice = numValue;
+    } else if (inlineEditField === 'sellPrice') {
+      if (isNaN(numValue) || numValue < 0) { cancelInlineEdit(); return; }
+      payload.sellPrice = numValue;
+    } else if (inlineEditField === 'quantityIn') {
+      if (isNaN(numValue) || numValue < 0) { cancelInlineEdit(); return; }
+      payload.quantityIn = numValue;
+    }
+
+    updateMutation.mutate(payload, {
+      onSuccess: () => {
+        toast.success('Updated');
+        cancelInlineEdit();
+      },
+      onError: () => cancelInlineEdit(),
+    });
+  }, [inlineEditId, inlineEditField, inlineEditValue, inventoryWithAvailable, updateMutation]);
+
+  const cancelInlineEdit = useCallback(() => {
+    setInlineEditId(null);
+    setInlineEditField(null);
+    setInlineEditValue('');
+  }, []);
+
+  const handleInlineKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') saveInlineEdit();
+    if (e.key === 'Escape') cancelInlineEdit();
+  }, [saveInlineEdit, cancelInlineEdit]);
+
+  // --- Render inline editable cell ---
+  const renderEditableCell = (item: InventoryItem & { available: number }, field: string, displayValue: string, rawValue: string | number, isNumeric = false) => {
+    const isEditing = inlineEditId === item.id && inlineEditField === field;
+    
+    if (isEditing) {
+      return (
+        <input
+          ref={inlineInputRef}
+          type={isNumeric ? 'number' : 'text'}
+          step={isNumeric ? '0.01' : undefined}
+          min={isNumeric ? '0' : undefined}
+          value={inlineEditValue}
+          onChange={(e) => setInlineEditValue(e.target.value)}
+          onBlur={saveInlineEdit}
+          onKeyDown={handleInlineKeyDown}
+          className={styles.inlineInput}
+        />
+      );
+    }
+
+    return (
+      <span
+        className={styles.editableCell}
+        onDoubleClick={() => startInlineEdit(item.id, field, rawValue)}
+        title="Double-click to edit"
+      >
+        {displayValue}
+      </span>
+    );
+  };
 
   const handleEditSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -131,6 +284,27 @@ export default function Inventory() {
           </div>
         </div>
 
+        {/* Totals Mode Toggle */}
+        <div className={styles.toggleBar}>
+          <div className={styles.toggleGroup}>
+            <button
+              className={`${styles.toggleBtn} ${totalsMode === 'item' ? styles.toggleBtnActive : ''}`}
+              onClick={() => setTotalsMode('item')}
+            >
+              Per Item
+            </button>
+            <button
+              className={`${styles.toggleBtn} ${totalsMode === 'stock' ? styles.toggleBtnActive : ''}`}
+              onClick={() => setTotalsMode('stock')}
+            >
+              Stock Value
+            </button>
+          </div>
+          <span className={styles.toggleHint}>
+            {totalsMode === 'stock' ? 'Totals = price × qty' : 'Totals = unit price sum'}
+          </span>
+        </div>
+
         {isLoading ? (
           <div className={styles.tableContainer}>
             <table className={styles.table}>
@@ -156,7 +330,7 @@ export default function Inventory() {
             <p className="font-medium">No items found matching the filters.</p>
           </div>
         ) : (
-          <div className="table-container">
+          <div className={styles.tableContainer}>
             <table className={styles.table}>
               <thead>
                 <tr>
@@ -172,55 +346,106 @@ export default function Inventory() {
                 </tr>
               </thead>
               <tbody>
-                {filteredInventory.map((item) => (
-                  <tr key={item.id} className={styles.tr}>
-                    <td className={styles.td}>
-                      {formatDateTime(item.dateAdded!)}
-                    </td>
-                    <td className={`${styles.td} ${styles.tdBold}`}>{item.name}</td>
-                    <td className={styles.td}>{formatCurrency(item.buyPrice)}</td>
-                    <td className={styles.td}>{formatCurrency(item.sellPrice || 0)}</td>
-                    <td className={styles.td} style={{ color: ((item.sellPrice || 0) - item.buyPrice) >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 'bold' }}>
-                      {((item.sellPrice || 0) - item.buyPrice) >= 0 ? '+' : '-'}{formatCurrency(Math.abs((item.sellPrice || 0) - item.buyPrice))}
-                    </td>
-                    <td className={styles.td}>
-                      {item.quantityIn} / <span className={styles.tdDim}>{item.quantityOut}</span>
-                    </td>
-                    <td className={styles.td}>
-                      <span style={{ color: item.available === 0 ? 'var(--danger)' : item.available < 5 ? 'var(--warning)' : 'var(--success)', fontWeight: 'bold' }}>
-                        {item.available}
-                      </span>
-                    </td>
-                    <td className={styles.td}>
-                      {item.available === 0 ? (
-                        <span className={styles.badgeDanger}>Out of Stock</span>
-                      ) : item.available < 5 ? (
-                        <span className={styles.badgeWarning}>Low Stock</span>
-                      ) : (
-                        <span className={styles.badgeSuccess}>In Stock</span>
-                      )}
-                    </td>
-                    <td className={`${styles.td} ${styles.tdRight}`}>
-                      <div className={styles.actionsGroup}>
-                        <button 
-                          onClick={() => setEditItem(item)}
-                          className={styles.actionBtn}
-                          title="Edit"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button 
-                          onClick={() => setDeleteItem(item)}
-                          className={`${styles.actionBtn} ${styles.textDanger}`}
-                          title="Delete"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {filteredInventory.map((item) => {
+                  const profit = getUnitProfit(item);
+                  const isLowStock = item.available > 0 && item.available < 5;
+                  
+                  return (
+                    <tr key={item.id} className={`${styles.tr} ${isLowStock ? styles.trLowStock : ''}`}>
+                      <td className={styles.td}>
+                        {formatDateTime(item.dateAdded!)}
+                      </td>
+                      <td className={`${styles.td} ${styles.tdBold}`}>
+                        {renderEditableCell(item, 'name', item.name, item.name)}
+                      </td>
+                      <td className={styles.td}>
+                        {renderEditableCell(item, 'buyPrice', formatCurrency(item.buyPrice), item.buyPrice, true)}
+                      </td>
+                      <td className={styles.td}>
+                        {renderEditableCell(item, 'sellPrice', formatCurrency(item.sellPrice || 0), item.sellPrice || 0, true)}
+                      </td>
+                      <td className={styles.td}>
+                        <span className={profit > 0 ? styles.profitPositive : styles.profitNegative}>
+                          {profit > 0 ? '+' : ''}{formatCurrency(profit)}
+                        </span>
+                      </td>
+                      <td className={styles.td}>
+                        {renderEditableCell(item, 'quantityIn', `${item.quantityIn}`, item.quantityIn, true)}
+                        {' / '}
+                        <span className={styles.tdDim}>{item.quantityOut}</span>
+                      </td>
+                      <td className={styles.td}>
+                        <span style={{ color: item.available === 0 ? 'var(--danger)' : item.available < 5 ? 'var(--warning)' : 'var(--success)', fontWeight: 'bold' }}>
+                          {item.available}
+                        </span>
+                      </td>
+                      <td className={styles.td}>
+                        {item.available === 0 ? (
+                          <span className={styles.badgeDanger}>Out of Stock</span>
+                        ) : item.available < 5 ? (
+                          <span className={styles.badgeWarning}>
+                            ⚠ Low Stock
+                          </span>
+                        ) : (
+                          <span className={styles.badgeSuccess}>In Stock</span>
+                        )}
+                      </td>
+                      <td className={`${styles.td} ${styles.tdRight}`}>
+                        <div className={styles.actionsGroup}>
+                          <button
+                            onClick={() => handleQuickAdd(item)}
+                            className={`${styles.actionBtn} ${styles.quickAddBtn}`}
+                            title="Quick +1 Stock"
+                            disabled={updateMutation.isPending}
+                          >
+                            <Plus size={14} />
+                          </button>
+                          <button 
+                            onClick={() => setEditItem(item)}
+                            className={styles.actionBtn}
+                            title="Edit"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button 
+                            onClick={() => setDeleteItem(item)}
+                            className={`${styles.actionBtn} ${styles.textDanger}`}
+                            title="Delete"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
+
+              {/* Sticky Totals Footer */}
+              <tfoot>
+                <tr className={styles.totalsRow}>
+                  <td className={styles.tdTotal} colSpan={2}>
+                    <strong>TOTALS</strong>
+                    <span className={styles.totalItemCount}>{totals.totalItems} items</span>
+                    <span className={styles.totalModeLabel}>
+                      {totalsMode === 'stock' ? 'Stock Value' : 'Price Summary'}
+                    </span>
+                  </td>
+                  <td className={styles.tdTotal}>{formatCurrency(totals.totalBuyValue)}</td>
+                  <td className={styles.tdTotal}>{formatCurrency(totals.totalSellValue)}</td>
+                  <td className={styles.tdTotal}>
+                    <span className={totals.totalProfit > 0 ? styles.profitPositive : styles.profitNegative}>
+                      {totals.totalProfit > 0 ? '+' : ''}{formatCurrency(totals.totalProfit)}
+                    </span>
+                  </td>
+                  <td className={styles.tdTotal}></td>
+                  <td className={styles.tdTotal}>
+                    <strong>{totals.totalQty}</strong>
+                  </td>
+                  <td className={styles.tdTotal}></td>
+                  <td className={styles.tdTotal}></td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         )}
